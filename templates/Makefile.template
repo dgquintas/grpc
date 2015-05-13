@@ -314,6 +314,10 @@ else
 GTEST_LIB = -lgtest
 endif
 GTEST_LIB += -lgflags
+
+# TODO(dgq): possibly perform a sanity check based on the presence leveldb's main .h file
+LEVELDB_LIB = -lleveldb
+
 ifeq ($(V),1)
 E = @:
 Q =
@@ -1369,6 +1373,8 @@ $(${tgt.name.upper()}_OBJS)\
 % endif
 % if tgt.language == 'c++' and tgt.build == 'test':
  $(GTEST_LIB)\
+% elif tgt.language == 'c++' and tgt.build == 'benchmark':
+ $(GTEST_LIB) $(LEVELDB_LIB)\
 % endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
 % if tgt.build == 'protoc' or tgt.language == 'c++':

@@ -2144,7 +2144,7 @@
     },
     {
       "name": "qps_driver",
-      "build": "tool",
+      "build": "benchmark",
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_driver.cc"
@@ -2162,7 +2162,7 @@
     },
     {
       "name": "qps_test",
-      "build": "test",
+      "build": "benchmark",
       "run": false,
       "language": "c++",
       "src": [
@@ -2180,7 +2180,7 @@
     },
     {
       "name": "qps_worker",
-      "build": "tool",
+      "build": "benchmark",
       "language": "c++",
       "headers": [
         "test/cpp/qps/client.h",
