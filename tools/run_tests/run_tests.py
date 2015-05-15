@@ -184,10 +184,14 @@ class PythonLanguage(object):
 
   def test_specs(self, config, travis):
     modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
-                                test['module']], None)
+                                test['module']], 
+                               None, 
+                               shortname=test['module'])
                for test in self._tests if 'module' in test]
     files = [config.job_spec(['tools/run_tests/run_python.sh',
-                              test['file']], None)
+                              test['file']], 
+                             None, 
+                             shortname=test['file'])
              for test in self._tests if 'file' in test]
     return files + modules
 
@@ -290,6 +294,8 @@ _CONFIGS = {
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt'}),
+    'asan-noleaks': SimpleConfig('asan', environ={
+        'ASAN_OPTIONS': 'detect_leaks=0:color=always:suppressions=tools/tsan_suppressions.txt'}),
     'gcov': SimpleConfig('gcov'),
     'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
     'helgrind': ValgrindConfig('dbg', 'helgrind')
