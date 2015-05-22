@@ -193,7 +193,10 @@ static void destroy_channel(void *p, int ok) {
 
 void grpc_channel_internal_unref(grpc_channel *channel) {
   if (gpr_unref(&channel->refs)) {
-    grpc_iomgr_add_callback(destroy_channel, channel);
+    delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
+    dcb->cb = destroy_channel;
+    dcb->cb_arg = channel;
+    grpc_iomgr_add_callback(dcb);
   }
 }
 

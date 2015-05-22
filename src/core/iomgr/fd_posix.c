@@ -90,6 +90,10 @@ static grpc_fd *alloc_fd(int fd) {
     r = gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&r->set_state_mu);
     gpr_mu_init(&r->watcher_mu);
+    /* TODO(dgq): allocate contiguous block for all cbs? */
+    r->on_done_cb = gpr_malloc(sizeof(delayed_callback));
+    r->ready_cb = gpr_malloc(sizeof(delayed_callback));
+    r->shutdown_cbs = gpr_malloc(sizeof(delayed_callback) * 2);
   }
   gpr_atm_rel_store(&r->refst, 1);
   gpr_atm_rel_store(&r->readst, NOT_READY);
@@ -104,6 +108,9 @@ static grpc_fd *alloc_fd(int fd) {
 static void destroy(grpc_fd *fd) {
   gpr_mu_destroy(&fd->set_state_mu);
   gpr_mu_destroy(&fd->watcher_mu);
+  gpr_free(fd->on_done_cb);
+  gpr_free(fd->ready_cb);
+  gpr_free(fd->shutdown_cbs);
   gpr_free(fd);
 }
 
@@ -115,7 +122,10 @@ static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
     close(fd->fd);
-    grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);
+    /*grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);*/
+    fd->on_done_cb->cb = fd->on_done;
+    fd->on_done_cb->cb_arg = fd->on_done_user_data;
+    grpc_iomgr_add_managed_callback(fd->on_done_cb);
     freelist_fd(fd);
     grpc_iomgr_unref();
   } else {
@@ -172,20 +182,36 @@ void grpc_fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
 void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 
 static void make_callback(grpc_iomgr_cb_func cb, void *arg, int success,
-                          int allow_synchronous_callback) {
+                          int allow_synchronous_callback,
+                          delayed_callback *dcb) {
   if (allow_synchronous_callback) {
     cb(arg, success);
   } else {
-    grpc_iomgr_add_delayed_callback(cb, arg, success);
+    if (dcb != NULL) {
+      dcb->cb = cb;
+      dcb->cb_arg = arg;
+      dcb->managed = 1;
+      grpc_iomgr_add_delayed_managed_callback(dcb, success);
+    } else {
+      dcb = gpr_malloc(sizeof(delayed_callback));
+      dcb->cb = cb;
+      dcb->cb_arg = arg;
+      grpc_iomgr_add_delayed_callback(dcb, success);
+    }
   }
 }
 
 static void make_callbacks(grpc_iomgr_closure *callbacks, size_t n, int success,
-                           int allow_synchronous_callback) {
+                           int allow_synchronous_callback,
+                           delayed_callback *dcbs) {
   size_t i;
   for (i = 0; i < n; i++) {
+    if (dcbs != NULL)
     make_callback(callbacks[i].cb, callbacks[i].cb_arg, success,
-                  allow_synchronous_callback);
+                  allow_synchronous_callback, dcbs + i);
+    else
+    make_callback(callbacks[i].cb, callbacks[i].cb_arg, success,
+                  allow_synchronous_callback, NULL);
   }
 }
 
@@ -214,7 +240,7 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
       gpr_atm_rel_store(st, NOT_READY);
       make_callback(closure->cb, closure->cb_arg,
                     !gpr_atm_acq_load(&fd->shutdown),
-                    allow_synchronous_callback);
+                    allow_synchronous_callback, NULL);
       return;
     default: /* WAITING */
       /* upcallptr was set to a different closure.  This is an error! */
@@ -264,7 +290,9 @@ static void set_ready(grpc_fd *fd, gpr_atm *st,
   set_ready_locked(st, &cb, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
   success = !gpr_atm_acq_load(&fd->shutdown);
-  make_callbacks(&cb, ncb, success, allow_synchronous_callback);
+  assert(ncb <= 1);
+  make_callbacks(&cb, ncb, success, allow_synchronous_callback, fd->ready_cb);
+  /*make_callbacks(&cb, ncb, success, allow_synchronous_callback, NULL);*/
 }
 
 void grpc_fd_shutdown(grpc_fd *fd) {
@@ -276,7 +304,9 @@ void grpc_fd_shutdown(grpc_fd *fd) {
   set_ready_locked(&fd->readst, cb, &ncb);
   set_ready_locked(&fd->writest, cb, &ncb);
   gpr_mu_unlock(&fd->set_state_mu);
-  make_callbacks(cb, ncb, 0, 0);
+  assert(ncb <= 2);
+  make_callbacks(cb, ncb, 0, 0, fd->shutdown_cbs);
+  /*make_callbacks(cb, ncb, 0, 0, NULL);*/
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure) {

@@ -367,7 +367,10 @@ void grpc_call_internal_unref(grpc_call *c, int allow_immediate_deletion) {
     if (allow_immediate_deletion) {
       destroy_call(c, 1);
     } else {
-      grpc_iomgr_add_callback(destroy_call, c);
+      delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
+      dcb->cb = destroy_call;
+      dcb->cb_arg = c;
+      grpc_iomgr_add_callback(dcb);
     }
   }
 }

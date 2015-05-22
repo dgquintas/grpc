@@ -154,6 +154,7 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   grpc_pollset_kick_init(&pollset->kick_state);
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
+
   become_empty_pollset(pollset);
 }
 
@@ -250,6 +251,7 @@ typedef struct grpc_unary_promote_args {
   const grpc_pollset_vtable *original_vtable;
   grpc_pollset *pollset;
   grpc_fd *fd;
+  delayed_callback *promotion_cb;
 } grpc_unary_promote_args;
 
 static void unary_poll_do_promote(void *args, int success) {
@@ -258,6 +260,7 @@ static void unary_poll_do_promote(void *args, int success) {
   grpc_pollset *pollset = up_args->pollset;
   grpc_fd *fd = up_args->fd;
   int do_shutdown_cb = 0;
+  gpr_free(up_args->promotion_cb);
   gpr_free(up_args);
 
   /*
@@ -353,7 +356,10 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   up_args->pollset = pollset;
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
-  grpc_iomgr_add_callback(unary_poll_do_promote, up_args);
+  up_args->promotion_cb = gpr_malloc(sizeof(delayed_callback));
+  up_args->promotion_cb->cb = unary_poll_do_promote;
+  up_args->promotion_cb->cb_arg = up_args;
+  grpc_iomgr_add_managed_callback(up_args->promotion_cb);
 
   grpc_pollset_kick(pollset);
 }

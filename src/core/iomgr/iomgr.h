@@ -37,11 +37,21 @@
 /* gRPC Callback definition */
 typedef void (*grpc_iomgr_cb_func)(void *arg, int success);
 
+typedef struct delayed_callback {
+  grpc_iomgr_cb_func cb;
+  void *cb_arg;
+  int success;
+  int managed;
+  struct delayed_callback *next;
+} delayed_callback;
+
 void grpc_iomgr_init(void);
 void grpc_iomgr_shutdown(void);
 
 /* This function is called from within a callback or from anywhere else
    and causes the invocation of a callback at some point in the future */
-void grpc_iomgr_add_callback(grpc_iomgr_cb_func cb, void *cb_arg);
+void grpc_iomgr_add_callback(delayed_callback *dcb);
+
+void grpc_iomgr_add_managed_callback(delayed_callback *dcb);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

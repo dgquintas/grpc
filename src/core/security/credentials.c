@@ -871,9 +871,10 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
 
   if (c->is_async) {
-    grpc_iomgr_add_callback(
-        on_simulated_token_fetch_done,
-        grpc_credentials_metadata_request_create(creds, cb, user_data));
+    delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
+    dcb->cb = on_simulated_token_fetch_done;
+    dcb->cb_arg = grpc_credentials_metadata_request_create(creds, cb, user_data);
+    grpc_iomgr_add_callback(dcb);
   } else {
     cb(user_data, &c->access_token_md, 1, GRPC_CREDENTIALS_OK);
   }

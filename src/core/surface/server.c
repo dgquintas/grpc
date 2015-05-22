@@ -300,11 +300,14 @@ static void finish_destroy_channel(void *cd, int success) {
 }
 
 static void destroy_channel(channel_data *chand) {
+  delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
   if (is_channel_orphaned(chand)) return;
   GPR_ASSERT(chand->server != NULL);
   orphan_channel(chand);
   server_ref(chand->server);
-  grpc_iomgr_add_callback(finish_destroy_channel, chand);
+  dcb->cb = finish_destroy_channel;
+  dcb->cb_arg = chand;
+  grpc_iomgr_add_callback(dcb);
 }
 
 static void finish_start_new_rpc_and_unlock(grpc_server *server,
@@ -415,16 +418,22 @@ static void server_on_recv(void *ptr, int success) {
     case GRPC_STREAM_RECV_CLOSED:
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
+        delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        dcb->cb = kill_zombie;
+        dcb->cb_arg = elem;
+        grpc_iomgr_add_callback(dcb);
       }
       gpr_mu_unlock(&chand->server->mu);
       break;
     case GRPC_STREAM_CLOSED:
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
+        delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
         calld->state = ZOMBIED;
-        grpc_iomgr_add_callback(kill_zombie, elem);
+        dcb->cb = kill_zombie;
+        dcb->cb_arg = elem;
+        grpc_iomgr_add_callback(dcb);
       } else if (calld->state == PENDING) {
         call_list_remove(calld, PENDING_START);
       }
@@ -499,8 +508,11 @@ static void finish_shutdown_channel(void *cd, int success) {
 }
 
 static void shutdown_channel(channel_data *chand) {
+  delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
   grpc_channel_internal_ref(chand->channel);
-  grpc_iomgr_add_callback(finish_shutdown_channel, chand);
+  dcb->cb = finish_shutdown_channel;
+  dcb->cb_arg = chand;
+  grpc_iomgr_add_callback(dcb);
 }
 
 static void init_call_elem(grpc_call_element *elem,
@@ -938,11 +950,13 @@ void grpc_server_destroy(grpc_server *server) {
 
   while ((calld = call_list_remove_head(&server->lists[PENDING_START],
                                         PENDING_START)) != NULL) {
+    delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
     gpr_log(GPR_DEBUG, "server destroys call %p", calld->call);
     calld->state = ZOMBIED;
-    grpc_iomgr_add_callback(
-        kill_zombie,
-        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
+    dcb->cb = kill_zombie;
+    dcb->cb_arg =
+        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0);
+    grpc_iomgr_add_callback(dcb);
   }
 
   for (c = server->root_channel_data.next; c != &server->root_channel_data;

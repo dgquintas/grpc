@@ -75,6 +75,11 @@ struct grpc_fd {
   grpc_iomgr_cb_func on_done;
   void *on_done_user_data;
   struct grpc_fd *freelist_next;
+  delayed_callback *on_done_cb;
+  delayed_callback *notify_on_cb;
+  delayed_callback *ready_cb;
+  delayed_callback *shutdown_cbs;
+
 };
 
 /* Create a wrapped file descriptor.

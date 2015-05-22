@@ -33,6 +33,7 @@
 
 #include "src/core/iomgr/iomgr.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
@@ -41,13 +42,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/sync.h>
-
-typedef struct delayed_callback {
-  grpc_iomgr_cb_func cb;
-  void *cb_arg;
-  int success;
-  struct delayed_callback *next;
-} delayed_callback;
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
@@ -60,6 +54,7 @@ static gpr_event g_background_callback_executor_done;
 /* Execute followup callbacks continuously.
    Other threads may check in and help during pollset_work() */
 static void background_callback_executor(void *ignored) {
+  int managed_cb;
   gpr_mu_lock(&g_mu);
   while (!g_shutdown) {
     gpr_timespec deadline = gpr_inf_future;
@@ -70,8 +65,9 @@ static void background_callback_executor(void *ignored) {
       g_cbs_head = cb->next;
       if (!g_cbs_head) g_cbs_tail = NULL;
       gpr_mu_unlock(&g_mu);
+      managed_cb = cb->managed;
       cb->cb(cb->cb_arg, cb->success);
-      gpr_free(cb);
+      if (!managed_cb) gpr_free(cb);
       gpr_mu_lock(&g_mu);
     } else if (grpc_alarm_check(&g_mu, gpr_now(), &deadline)) {
     } else {
@@ -104,6 +100,7 @@ void grpc_iomgr_init(void) {
 
 void grpc_iomgr_shutdown(void) {
   delayed_callback *cb;
+  int managed_cb;
   gpr_timespec shutdown_deadline =
       gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
 
@@ -119,8 +116,9 @@ void grpc_iomgr_shutdown(void) {
       if (!g_cbs_head) g_cbs_tail = NULL;
       gpr_mu_unlock(&g_mu);
 
+      managed_cb = cb->managed;
       cb->cb(cb->cb_arg, 0);
-      gpr_free(cb);
+      if (!managed_cb) gpr_free(cb);
       gpr_mu_lock(&g_mu);
     }
     if (g_refs) {
@@ -167,11 +165,7 @@ void grpc_iomgr_unref(void) {
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
-                                     int success) {
-  delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
-  dcb->cb = cb;
-  dcb->cb_arg = cb_arg;
+void grpc_iomgr_add_delayed_callback(delayed_callback *dcb, int success) {
   dcb->success = success;
   gpr_mu_lock(&g_mu);
   dcb->next = NULL;
@@ -184,12 +178,13 @@ void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_add_callback(grpc_iomgr_cb_func cb, void *cb_arg) {
-  grpc_iomgr_add_delayed_callback(cb, cb_arg, 1);
+void grpc_iomgr_add_callback(delayed_callback *dcb) {
+  grpc_iomgr_add_delayed_callback(dcb, 1);
 }
 
 int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
   int n = 0;
+  int is_managed_cb;
   gpr_mu *retake_mu = NULL;
   delayed_callback *cb;
   for (;;) {
@@ -211,8 +206,9 @@ int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
       retake_mu = drop_mu;
       drop_mu = NULL;
     }
+    is_managed_cb = cb->managed;
     cb->cb(cb->cb_arg, success && cb->success);
-    gpr_free(cb);
+    if (!is_managed_cb) gpr_free(cb);
     n++;
   }
   if (retake_mu) {

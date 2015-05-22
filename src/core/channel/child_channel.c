@@ -213,12 +213,18 @@ static void maybe_destroy_channel(grpc_child_channel *channel) {
   lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
   if (chand->destroyed && chand->disconnected && chand->active_calls == 0 &&
       !chand->sending_farewell && !chand->calling_back) {
-    grpc_iomgr_add_callback(finally_destroy_channel, channel);
+    delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
+    dcb->cb = finally_destroy_channel;
+    dcb->cb_arg = channel;
+    grpc_iomgr_add_callback(dcb);
   } else if (chand->destroyed && !chand->disconnected &&
              chand->active_calls == 0 && !chand->sending_farewell &&
              !chand->sent_farewell) {
+    delayed_callback *dcb = gpr_malloc(sizeof(delayed_callback));
+    dcb->cb = send_farewells;
+    dcb->cb_arg = channel;
     chand->sending_farewell = 1;
-    grpc_iomgr_add_callback(send_farewells, channel);
+    grpc_iomgr_add_callback(dcb);
   }
 }
 
