@@ -74,6 +74,14 @@ def shuffle_iteratable(it):
       yield val
     else:
       nextit.append(val)
+      # dont allow nextit to grow too large
+      if len(nextit) > 50:
+        random.shuffle(nextit)
+        for val in nextit:
+          yield val
+        # reset accumulator
+        p = 1
+        nextit = []
   # after taking a random sampling, we shuffle the rest of the elements and
   # yield them
   random.shuffle(nextit)
