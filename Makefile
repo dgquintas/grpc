@@ -2952,6 +2952,7 @@ LIBGRPC_SRC = \
     src/core/channel/child_channel.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_setup.c \
+    src/core/channel/compress_filter.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
@@ -3196,6 +3197,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/child_channel.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_setup.c \
+    src/core/channel/compress_filter.c \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \

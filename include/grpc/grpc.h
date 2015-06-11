@@ -250,6 +250,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
+  gpr_uint32 flags; /**< XXX */
   union {
     struct {
       size_t count;
@@ -289,7 +290,7 @@ typedef struct grpc_op {
          Pre-allocating space:
          size_t my_capacity = 8;
          char *my_details = gpr_malloc(my_capacity);
-         x.status_details = &my_details;
+         x.status_details = &my_details;    
          x.status_details_capacity = &my_capacity;
 
          Not pre-allocating space:

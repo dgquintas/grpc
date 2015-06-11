@@ -115,3 +115,28 @@ int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
   }
   return 0;
 }
+
+static const char grpc_channel_args_compress_algorithm_key[] =
+    "compress-algorithm";
+grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
+    const grpc_channel_args *a) {
+  size_t i;
+  for (i = 0; i < a->num_args; ++i) {
+    if (a->args[i].type == GRPC_ARG_INTEGER &&
+        !strcmp(grpc_channel_args_compress_algorithm_key, a->args[i].key)) {
+      return a->args[i].value.integer;
+      break;
+    }
+  }
+  return GRPC_COMPRESS_NONE;
+}
+
+void grpc_channel_args_set_compression_algorithm(
+    const grpc_channel_args *a, grpc_compression_algorithm algorithm) {
+  grpc_arg tmp;
+  tmp.type = GRPC_ARG_INTEGER;
+  tmp.key = gpr_strdup(grpc_channel_args_compress_algorithm_key);
+  tmp.value.integer = algorithm;
+  a = grpc_channel_args_copy_and_add(a, &tmp);
+  gpr_free(tmp.key);
+}

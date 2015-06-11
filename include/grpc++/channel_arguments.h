@@ -38,6 +38,7 @@
 #include <list>
 
 #include <grpc++/config.h>
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 
 namespace grpc {

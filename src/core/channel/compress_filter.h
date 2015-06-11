@@ -31,35 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
+#define GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H
 
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
+#include "src/core/channel/channel_stack.h"
 
-/* Copy some arguments */
-grpc_channel_args *grpc_channel_args_copy(const grpc_channel_args *src);
+/* XXX */
+extern const grpc_channel_filter grpc_compress_filter;
 
-/** Copy some arguments and add the to_add parameter in the end.
-   If to_add is NULL, it is equivalent to call grpc_channel_args_copy. */
-grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
-                                                  const grpc_arg *to_add);
-
-/** Destroy arguments created by grpc_channel_args_copy */
-void grpc_channel_args_destroy(grpc_channel_args *a);
-
-/** Reads census_enabled settings from channel args. Returns 1 if census_enabled
- * is specified in channel args, otherwise returns 0. */
-int grpc_channel_args_is_census_enabled(const grpc_channel_args *a);
-
-/** Returns the compression algorithm from channel args. Note that absence of
- * compression is signaled by GRPC_COMPRESS_NONE. */
-grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
-    const grpc_channel_args *a);
-
-/** Sets the compression algorithm in the channel args. Setting it to
- * GRPC_COMPRESS_NONE disables compression for the channel */
-void grpc_channel_args_set_compression_algorithm(
-    const grpc_channel_args *a, grpc_compression_algorithm algorithm);
-
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */

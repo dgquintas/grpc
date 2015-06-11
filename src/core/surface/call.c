@@ -185,6 +185,7 @@ struct grpc_call {
      and a strong upper bound of a count of masters to be calculated. */
   gpr_uint8 request_set[GRPC_IOREQ_OP_COUNT];
   grpc_ioreq_data request_data[GRPC_IOREQ_OP_COUNT];
+  gpr_uint32 request_flags[GRPC_IOREQ_OP_COUNT];
   reqinfo_master masters[GRPC_IOREQ_OP_COUNT];
 
   /* Dynamic array of ioreq's that have completed: the count of
@@ -818,6 +819,7 @@ static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
 
 static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
   grpc_ioreq_data data;
+  gpr_uint32 flags;
   grpc_metadata_batch mdb;
   size_t i;
   GPR_ASSERT(op->send_ops == NULL);
@@ -844,8 +846,9 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
     case WRITE_STATE_STARTED:
       if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE)) {
         data = call->request_data[GRPC_IOREQ_SEND_MESSAGE];
+        flags = call->request_flags[GRPC_IOREQ_SEND_MESSAGE];
         grpc_sopb_add_begin_message(
-            &call->send_ops, grpc_byte_buffer_length(data.send_message), 0);
+            &call->send_ops, grpc_byte_buffer_length(data.send_message), flags);
         copy_byte_buffer_to_stream_ops(data.send_message, &call->send_ops);
         op->send_ops = &call->send_ops;
         call->last_send_contains |= 1 << GRPC_IOREQ_SEND_MESSAGE;
@@ -979,6 +982,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     have_ops |= 1u << op;
 
     call->request_data[op] = data;
+    call->request_flags[op] = reqs[i].flags;
     call->request_set[op] = set;
   }
 
@@ -1221,6 +1225,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_MESSAGE;
         req->data.send_message = op->data.send_message;
+        /* XXX */
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         if (!call->is_client) {
