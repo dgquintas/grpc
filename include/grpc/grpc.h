@@ -252,11 +252,7 @@ typedef enum {
    no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
-<<<<<<< HEAD
-  gpr_uint32 flags; /**< XXX */
-=======
   gpr_uint32 flags;  /**< Write flags bitset for grpc_begin_messages */
->>>>>>> origin/flags-abi
   union {
     struct {
       size_t count;

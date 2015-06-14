@@ -79,11 +79,7 @@ typedef union {
 typedef struct {
   grpc_ioreq_op op;
   grpc_ioreq_data data;
-<<<<<<< HEAD
-  gpr_uint32 flags; /* XXX straight from grpc_op */
-=======
   gpr_uint32 flags;  /**< A copy of the write flags from grpc_op */
->>>>>>> origin/flags-abi
 } grpc_ioreq;
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
