@@ -42,7 +42,7 @@
 
 typedef struct call_data {
   gpr_slice_buffer slices;
-  int remaining_slices;
+  int remaining_slice_bytes;
   int dont_compress;  /**< whether skip compression for this specific call */
 } call_data;
 
@@ -53,7 +53,10 @@ typedef struct channel_data {
 static void compress_send_sb(grpc_compression_algorithm algorithm,
                              gpr_slice_buffer *slices) {
   gpr_slice_buffer tmp;
-  grpc_msg_compress(algorithm, slices, &tmp);
+  gpr_slice_buffer_init(&tmp);
+  if (!grpc_msg_compress(algorithm, slices, &tmp)) {
+    gpr_log(GPR_INFO, "Not compressed!");
+  }
   gpr_slice_buffer_swap(slices, &tmp);
   gpr_slice_buffer_destroy(&tmp);
 }
@@ -62,25 +65,24 @@ static void process_send_ops(grpc_call_element *elem,
                              grpc_stream_op_buffer *send_ops) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
-  size_t i;
-
+  size_t i, j;
   /* buffer up slices until we've processed all the expected ones (as given by
    * GRPC_OP_BEGIN_MESSAGE) */
   for (i = 0; i < send_ops->nops; ++i) {
     grpc_stream_op *sop = &send_ops->ops[i];
     switch (sop->type) {
       case GRPC_OP_BEGIN_MESSAGE:
-        calld->remaining_slices = sop->data.begin_message.length;
+        calld->remaining_slice_bytes = sop->data.begin_message.length;
         calld->dont_compress =
             !!(sop->data.begin_message.flags & GRPC_WRITE_NO_COMPRESS);
         break;
       case GRPC_OP_SLICE:
         if (calld->dont_compress) return;
-        GPR_ASSERT(calld->remaining_slices > 0);
+        GPR_ASSERT(calld->remaining_slice_bytes > 0);
         /* add to calld->slices */
         gpr_slice_buffer_add(&calld->slices, sop->data.slice);
-        --(calld->remaining_slices);
-        if (--(calld->remaining_slices) == 0) {
+        calld->remaining_slice_bytes -= GPR_SLICE_LENGTH(sop->data.slice);
+        if (calld->remaining_slice_bytes == 0) {
           /* compress */
           compress_send_sb(channeld->compress_algorithm, &calld->slices);
         }
@@ -94,16 +96,13 @@ static void process_send_ops(grpc_call_element *elem,
   /* at this point, calld->slices contains the *compressed* slices from
    * send_ops->ops[*]->data.slice. We now replace these input slices with the
    * compressed ones. */
-  /* Compression mustn't have made things worse */
-  GPR_ASSERT(calld->slices.count <= send_ops->nops);
-  for (i = 0; i < send_ops->nops; ++i) {
+  for (i = 0, j = 0; i < send_ops->nops; ++i) {
     grpc_stream_op *sop = &send_ops->ops[i];
+    GPR_ASSERT(j < calld->slices.count);
     switch (sop->type) {
       case GRPC_OP_SLICE:
         gpr_slice_unref(sop->data.slice);
-        if (i < calld->slices.count) {
-          sop->data.slice = gpr_slice_ref(calld->slices.slices[i]);
-        }
+        sop->data.slice = gpr_slice_ref(calld->slices.slices[j++]);
         break;
       case GRPC_OP_BEGIN_MESSAGE:
       case GRPC_NO_OP:
@@ -132,10 +131,8 @@ static void compress_start_transport_op(grpc_call_element *elem,
    calls on the server */
 static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
-  /* XXX anything I should care about here? */
   switch (op->type) {
     default:
-      /* pass control up or down the stack depending on op->dir */
       grpc_channel_next_op(elem, op);
       break;
   }
@@ -150,7 +147,6 @@ static void init_call_elem(grpc_call_element *elem,
 
   /* initialize members */
   gpr_slice_buffer_init(&calld->slices);
-  calld->dont_compress = initial_op->dont_compress;
 
   if (initial_op) {
     if (initial_op->send_ops && initial_op->send_ops->nops > 0) {
@@ -171,8 +167,8 @@ static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   channel_data *channeld = elem->channel_data;
-  channeld->compress_algorithm =
-      grpc_channel_args_get_compression_algorithm(args);
+  channeld->compress_algorithm = grpc_compression_algorithm_for_level(
+      grpc_channel_args_get_compression_level(args));
   /*We shouldn't be in this filter if compression is disabled. */
   GPR_ASSERT(channeld->compress_algorithm != GRPC_COMPRESS_NONE);
 
@@ -185,6 +181,7 @@ static void init_channel_elem(grpc_channel_element *elem,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
+  /* empty for now */
 }
 
 const grpc_channel_filter grpc_compress_filter = {

@@ -1225,7 +1225,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
         req = &reqs[out++];
         req->op = GRPC_IOREQ_SEND_MESSAGE;
         req->data.send_message = op->data.send_message;
-        /* XXX */
+        req->flags = ops->flags;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         if (!call->is_client) {
