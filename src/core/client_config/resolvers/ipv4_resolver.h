@@ -31,43 +31,17 @@
  *
  */
 
-#include "src/core/client_config/uri_parser.h"
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_IPV4_RESOLVER_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_IPV4_RESOLVER_H
 
-#include <string.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
+#include "src/core/client_config/resolver_factory.h"
 
-#include "test/core/util/test_config.h"
+/** Create a ipv4 resolver factory, to be used mostly in tests.
+ *
+ * It resolves URIs of the form ipv4:host:port[,host:port]*. 
+ * Eg, ipv4:192.168.1.2:12345,10.0.0.1:23 */
+grpc_resolver_factory *grpc_ipv4_resolver_factory_create(void);
 
-static void test_succeeds(const char *uri_text, const char *scheme,
-                          const char *authority, const char *path) {
-  grpc_uri *uri = grpc_uri_parse(uri_text, 0);
-  GPR_ASSERT(uri);
-  GPR_ASSERT(0 == strcmp(scheme, uri->scheme));
-  GPR_ASSERT(0 == strcmp(authority, uri->authority));
-  GPR_ASSERT(0 == strcmp(path, uri->path));
-  grpc_uri_destroy(uri);
-}
-
-static void test_fails(const char *uri_text) {
-  GPR_ASSERT(NULL == grpc_uri_parse(uri_text, 0));
-}
-
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  test_succeeds("http://www.google.com", "http", "www.google.com", "");
-  test_succeeds("dns:///foo", "dns", "", "/foo");
-  test_succeeds("http://www.google.com:90", "http", "www.google.com:90", "");
-  test_succeeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom");
-  test_succeeds("a+b:foo.coom", "a+b", "", "foo.coom");
-  test_succeeds("zookeeper://127.0.0.1:2181/foo/bar", "zookeeper",
-                "127.0.0.1:2181", "/foo/bar");
-  test_succeeds("ipv4:192.168.1.2:1234,10.0.0.1:666", "ipv4", "",
-                "192.168.1.2:1234,10.0.0.1:666");
-  test_fails("xyz");
-  test_fails("http://www.google.com?why-are-you-using-queries");
-  test_fails("dns:foo.com#fragments-arent-supported-here");
-  test_fails("http:?huh");
-  test_fails("unix:#yeah-right");
-  return 0;
-}
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_IPV4_RESOLVER_H */

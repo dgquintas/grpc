@@ -39,6 +39,7 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/client_config/resolvers/dns_resolver.h"
+#include "src/core/client_config/resolvers/ipv4_resolver.h"
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/profiling/timers.h"
@@ -71,6 +72,7 @@ void grpc_init(void) {
 #ifdef GPR_POSIX_SOCKET
     grpc_register_resolver_type("unix", grpc_unix_resolver_factory_create());
 #endif
+    grpc_register_resolver_type("ipv4", grpc_ipv4_resolver_factory_create());
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);
