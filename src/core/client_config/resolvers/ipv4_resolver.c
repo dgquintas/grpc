@@ -130,6 +130,7 @@ static void ipv4_maybe_finish_next_locked(ipv4_resolver *r) {
           r->subchannel_factory, &args);
     }
     lb_policy = r->lb_policy_factory(subchannels, r->num_addrs);
+    gpr_free(subchannels);
     grpc_client_config_set_lb_policy(config, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "ipv4");
     r->published = 1;

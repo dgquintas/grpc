@@ -421,6 +421,15 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "lb_policies_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "message_compress_test", 
     "platforms": [
       "windows", 

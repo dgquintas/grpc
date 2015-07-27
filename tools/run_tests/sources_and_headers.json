@@ -744,6 +744,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "lb_policies_test", 
+    "src": [
+      "test/core/client_config/lb_policies_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "low_level_ping_pong_benchmark", 
     "src": [
       "test/core/network_benchmarks/low_level_ping_pong.c"

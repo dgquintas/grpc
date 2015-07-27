@@ -1588,6 +1588,20 @@
       ]
     },
     {
+      "name": "lb_policies_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/client_config/lb_policies_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "low_level_ping_pong_benchmark",
       "build": "benchmark",
       "language": "c",
