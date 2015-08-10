@@ -132,7 +132,7 @@ static void ipv4_maybe_finish_next_locked(ipv4_resolver *r) {
     lb_policy = r->lb_policy_factory(subchannels, r->num_addrs);
     gpr_free(subchannels);
     grpc_client_config_set_lb_policy(config, lb_policy);
-    GRPC_LB_POLICY_UNREF(lb_policy, "ipv4");
+    GRPC_LB_POLICY_UNREF(lb_policy, "mipv4");
     r->published = 1;
     *r->target_config = config;
     grpc_iomgr_add_callback(r->next_completion);
@@ -232,6 +232,6 @@ static const grpc_resolver_factory_vtable ipv4_factory_vtable = {
     ipv4_factory_ref, ipv4_factory_unref, ipv4_factory_create_resolver};
 static grpc_resolver_factory ipv4_resolver_factory = {&ipv4_factory_vtable};
 
-grpc_resolver_factory *grpc_ipv4_resolver_factory_create() {
+grpc_resolver_factory *grpc_multi_ipv4_resolver_factory_create() {
   return &ipv4_resolver_factory;
 }

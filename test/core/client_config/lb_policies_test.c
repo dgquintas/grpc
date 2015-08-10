@@ -61,7 +61,7 @@ static fixture_data *create_fixture(grpc_channel_args *server_args) {
     f->servers[i] = grpc_server_create(server_args);
     grpc_server_register_completion_queue(f->servers[i], f->cqs[i]);
     gpr_asprintf(&f->addrs[i], "%s:%d", host, port);
-    GPR_ASSERT(grpc_server_add_http2_port(f->servers[i], f->addrs[i]));
+    GPR_ASSERT(grpc_server_add_insecure_http2_port(f->servers[i], f->addrs[i]));
   }
   return f;
 } 
@@ -122,7 +122,7 @@ static void test_ipv4_resolver(fixture_data *f) {
   joined_addrs =
       gpr_strjoin_sep((const char **)f->addrs, NUM_SERVERS, ",", NULL);
   gpr_asprintf(&uri, "ipv4:%s", joined_addrs);
-  client = grpc_channel_create(uri, NULL);
+  client = grpc_insecure_channel_create(uri, NULL);
   gpr_free(joined_addrs);
   gpr_free(uri);
   GPR_ASSERT(client);

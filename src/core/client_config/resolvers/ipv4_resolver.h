@@ -42,6 +42,6 @@
  *
  * It resolves URIs of the form ipv4:host:port[,host:port]*. 
  * Eg, ipv4:192.168.1.2:12345,10.0.0.1:23 */
-grpc_resolver_factory *grpc_ipv4_resolver_factory_create(void);
+grpc_resolver_factory *grpc_multi_ipv4_resolver_factory_create(void);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_IPV4_RESOLVER_H */
