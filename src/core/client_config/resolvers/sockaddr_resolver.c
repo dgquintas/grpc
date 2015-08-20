@@ -46,6 +46,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/lb_policies/round_robin.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 
@@ -317,7 +318,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver *name##_factory_create_resolver(               \
       grpc_resolver_factory *factory, grpc_uri *uri,                  \
       grpc_subchannel_factory *subchannel_factory) {                  \
-    return sockaddr_create(uri, grpc_create_pick_first_lb_policy,     \
+    return sockaddr_create(uri, grpc_create_round_robin_lb_policy,    \
                            subchannel_factory, parse_##name);         \
   }                                                                   \
   static const grpc_resolver_factory_vtable name##_factory_vtable = { \
