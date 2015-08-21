@@ -145,15 +145,22 @@ static connected_list *add_connected_sc_locked(round_robin_lb_policy *p,
     *insert_head = new_elem;
   }
 
+  if (p->connected_list_pick_head == NULL) 
   gpr_log(GPR_INFO, "ADDING %p. INSERT HEAD AT %p. PICK HEAD AT %p", csc,
           (*insert_head)->subchannel, p->connected_list_pick_head);
+  else
+  gpr_log(GPR_INFO, "ADDING %p. INSERT HEAD AT %p. PICK HEAD AT %p", csc,
+          (*insert_head)->subchannel, p->connected_list_pick_head->subchannel);
+
   return new_elem;
 }
 
 /** Removes \a sc from the list of connected subchannels */
 static void remove_disconnected_sc_locked(connected_list *sc) {
   /* XXX: what if sc is the beginning, insertion or pick point? */
-  GPR_ASSERT(sc != NULL);
+  if (sc == NULL) {
+    return;
+  }
   if (sc->prev != NULL) {
     sc->prev->next = sc->next;
   }
@@ -260,6 +267,7 @@ void rr_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
   if ((p->selected = get_next_connected_subchannel_locked(p))) {
     gpr_log(GPR_INFO, "PICKED FROM RR_PICK: %p. PICK HEAD AT %p", p->selected, p->connected_list_pick_head);
     gpr_mu_unlock(&p->mu);
+    gpr_log(GPR_INFO, "(RR PICK) SETTING TARGET TO %p", p->selected);
     *target = p->selected;
     on_complete->cb(on_complete->cb_arg, 1);
   } else {
@@ -325,10 +333,11 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
          * ahead and pick one and notify the pending suitors in
          * p->pending_picks. This preemtively replicates rr_pick()'s actions. */
         p->selected = get_next_connected_subchannel_locked(p);
-        gpr_log(GPR_INFO, "PICKED FROM RR_CON_CHANGED: %p", p->selected);
+        gpr_log(GPR_INFO, "SELECTED FROM RR_CON_CHANGED: %p", p->selected);
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = p->selected;
+          gpr_log(GPR_INFO, "(CONN CHANGED) SETTING TARGET TO %p", p->selected);
           grpc_subchannel_del_interested_party(p->selected, pp->pollset);
           grpc_iomgr_add_delayed_callback(pp->on_complete, 1);
           gpr_free(pp);
