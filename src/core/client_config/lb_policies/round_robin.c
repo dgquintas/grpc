@@ -31,6 +31,8 @@
  *
  */
 
+#include <stdio.h>
+
 #include "src/core/client_config/lb_policies/round_robin.h"
 
 #include <string.h>
@@ -96,7 +98,6 @@ typedef struct {
   connectivity_changed_cb_arg *cb_args;
 } round_robin_lb_policy;
 
-
 /** Returns the next subchannel from the connected list or NULL if the list is
  * empty */
 static grpc_subchannel *get_next_connected_subchannel_locked(
@@ -118,13 +119,17 @@ static grpc_subchannel *get_next_connected_subchannel_locked(
   return selected->subchannel;
 }
 
-/** Adds the connected subchannel \a csc to \a list */
+/** Adds the connected subchannel \a csc to \a list.
+ *
+ * Inserts after p->connected_list_insertion_head. The newly inserted node
+ * becomes the new insertion head.
+ * */
 static connected_list *add_connected_sc_locked(round_robin_lb_policy *p,
                                                grpc_subchannel *csc) {
   connected_list **insert_head = &p->connected_list_insertion_head;
   connected_list *new_elem = gpr_malloc(sizeof(connected_list));
   new_elem->subchannel = csc;
-  if (p->connected_list == NULL) {
+  if (p->connected_list == NULL || *insert_head == NULL) {
     /* first element */
     new_elem->next = NULL;
     new_elem->prev = NULL;
@@ -145,7 +150,7 @@ static connected_list *add_connected_sc_locked(round_robin_lb_policy *p,
     *insert_head = new_elem;
   }
 
-  if (p->connected_list_pick_head == NULL) 
+  if (p->connected_list_pick_head == NULL)
   gpr_log(GPR_INFO, "ADDING %p. INSERT HEAD AT %p. PICK HEAD AT %p", csc,
           (*insert_head)->subchannel, p->connected_list_pick_head);
   else
@@ -155,20 +160,30 @@ static connected_list *add_connected_sc_locked(round_robin_lb_policy *p,
   return new_elem;
 }
 
-/** Removes \a sc from the list of connected subchannels */
-static void remove_disconnected_sc_locked(connected_list *sc) {
-  /* XXX: what if sc is the beginning, insertion or pick point? */
-  if (sc == NULL) {
+/** Removes \a node from the list of connected subchannels */
+static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
+                                          connected_list *node) {
+  /* XXX: what if node is the beginning, insertion or pick point? */
+  gpr_log(GPR_INFO, "BAAAAAAAAAAAAAAAR removing %p", node->subchannel);
+  if (node == NULL) {
     return;
   }
-  if (sc->prev != NULL) {
-    sc->prev->next = sc->next;
+  if (node == p->connected_list_pick_head) {
+    p->connected_list_pick_head = node->next; /* valid even if next is null */
   }
-  if (sc->next != NULL) {
-    sc->next->prev = sc->prev;
+  if (node == p->connected_list_insertion_head) {
+    p->connected_list_insertion_head = node->prev; /* valid even if prev is null */
   }
-  gpr_free(sc);
+
+  if (node->prev != NULL) {
+    node->prev->next = node->next;
+  }
+  if (node->next != NULL) {
+    node->next->prev = node->prev;
+  }
+  gpr_free(node);
 }
+
 
 static void del_interested_parties_locked(round_robin_lb_policy *p,
                                           size_t idx) {
@@ -265,7 +280,11 @@ void rr_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
   /* XXX: si ya se ha encontrado resultado, devolverlo e invocar el cb asociado.
    * Esto hay que cambiarlo para que vaya leyendo de connected_list  */
   if ((p->selected = get_next_connected_subchannel_locked(p))) {
-    gpr_log(GPR_INFO, "PICKED FROM RR_PICK: %p. PICK HEAD AT %p", p->selected, p->connected_list_pick_head);
+    if (p->connected_list_pick_head) {
+      gpr_log(GPR_INFO, "PICKED FROM RR_PICK: %p. PICK HEAD AT %p", p->selected, p->connected_list_pick_head->subchannel);
+    } else {
+      gpr_log(GPR_INFO, "PICKED FROM RR_PICK: %p. PICK HEAD AT %p", p->selected, p->connected_list_pick_head);
+    }
     gpr_mu_unlock(&p->mu);
     gpr_log(GPR_INFO, "(RR PICK) SETTING TARGET TO %p", p->selected);
     *target = p->selected;
@@ -303,24 +322,21 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
 
   gpr_mu_lock(&p->mu);
 
+
   this_connectivity =
       &p->subchannel_connectivity[this_idx];
 
+  gpr_log(GPR_INFO, "\tCONNECTIVITY CHANGED FOR %d TO %d", this_idx, *this_connectivity);
+
   if (p->shutdown) {
     unref = 1;
-  } else if (p->selected == p->subchannels[this_idx]) {
-    /* connectivity state of the currently selected channel has changed */
-    grpc_connectivity_state_set(
-        &p->state_tracker, p->subchannel_connectivity[this_idx],
-        "selected_changed");
-    if (*this_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {
-      grpc_subchannel_notify_on_state_change(
-          p->selected, this_connectivity,
-          &p->connectivity_changed_cbs[this_idx]);
-    } else {
-      unref = 1;
-    }
   } else {
+    if (p->selected == p->subchannels[this_idx]) {
+      /* connectivity state of the currently selected channel has changed */
+      grpc_connectivity_state_set(&p->state_tracker,
+                                  p->subchannel_connectivity[this_idx],
+                                  "selected_changed");
+    }
     switch (*this_connectivity) {
       case GRPC_CHANNEL_READY:
         grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_READY,
@@ -332,7 +348,8 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
         /* at this point we know there's at least one suitable subchannel. Go
          * ahead and pick one and notify the pending suitors in
          * p->pending_picks. This preemtively replicates rr_pick()'s actions. */
-        p->selected = get_next_connected_subchannel_locked(p);
+        /*p->selected = get_next_connected_subchannel_locked(p);*/
+        p->selected = p->subchannels[this_idx];
         gpr_log(GPR_INFO, "SELECTED FROM RR_CON_CHANGED: %p", p->selected);
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
@@ -343,16 +360,8 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
           gpr_free(pp);
         }
         grpc_subchannel_notify_on_state_change(
-            p->selected, this_connectivity,
+            p->subchannels[this_idx], this_connectivity,
             &p->connectivity_changed_cbs[this_idx]);
-        break;
-      case GRPC_CHANNEL_TRANSIENT_FAILURE:
-        grpc_connectivity_state_set(&p->state_tracker,
-                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    "connecting_transient_failure");
-        del_interested_parties_locked(p, this_idx);
-        remove_disconnected_sc_locked(
-            p->subchannels_to_list_elem[this_idx]);
         break;
       case GRPC_CHANNEL_CONNECTING:
       case GRPC_CHANNEL_IDLE:
@@ -362,13 +371,29 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
             p->subchannels[this_idx], this_connectivity,
             &p->connectivity_changed_cbs[this_idx]);
         break;
-      case GRPC_CHANNEL_FATAL_FAILURE:
-        del_interested_parties_locked(p, this_idx);
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        grpc_connectivity_state_set(&p->state_tracker,
+                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    "connecting_transient_failure");
+        /* renew state notification */
+        grpc_subchannel_notify_on_state_change(
+            p->subchannels[this_idx], this_connectivity,
+            &p->connectivity_changed_cbs[this_idx]);
 
-        GPR_ASSERT(p->subchannels_to_list_elem[this_idx] != NULL);
-        remove_disconnected_sc_locked(
-            p->subchannels_to_list_elem[this_idx]);
-        p->subchannels_to_list_elem[this_idx] = NULL;
+        /* remove for now if it was */
+        if (p->subchannels_to_list_elem[this_idx] != NULL) {
+          del_interested_parties_locked(p, this_idx);
+          remove_disconnected_sc_locked(p, p->subchannels_to_list_elem[this_idx]);
+          p->subchannels_to_list_elem[this_idx] = NULL;
+        }
+
+        break;
+      case GRPC_CHANNEL_FATAL_FAILURE:
+        if (p->subchannels_to_list_elem[this_idx] != NULL) {
+          del_interested_parties_locked(p, this_idx);
+          remove_disconnected_sc_locked(p, p->subchannels_to_list_elem[this_idx]);
+          p->subchannels_to_list_elem[this_idx] = NULL;
+        }
 
         GPR_SWAP(grpc_subchannel *, p->subchannels[this_idx],
                  p->subchannels[p->num_subchannels - 1]);
@@ -392,8 +417,8 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
                                       GRPC_CHANNEL_TRANSIENT_FAILURE,
                                       "subchannel_failed");
         }
-    }
-  }
+    }  /* switch */
+  }  /* !unref */
 
   gpr_mu_unlock(&p->mu);
 
