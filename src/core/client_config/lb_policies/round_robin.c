@@ -40,6 +40,8 @@
 #include <grpc/support/alloc.h>
 #include "src/core/transport/connectivity_state.h"
 
+int grpc_lb_round_robin_trace = 0;
+
 typedef struct pending_pick {
   struct pending_pick *next;
   grpc_pollset *pollset;
@@ -47,11 +49,11 @@ typedef struct pending_pick {
   grpc_iomgr_closure *on_complete;
 } pending_pick;
 
-typedef struct connected_list {
-  struct connected_list *next;
-  struct connected_list *prev;
+typedef struct ready_list {
   grpc_subchannel *subchannel;
-} connected_list;
+  struct ready_list *next;
+  struct ready_list *prev;
+} ready_list;
 
 typedef struct {
   /** The index w.r.t. p->subchannels for the associated cb */
@@ -84,129 +86,124 @@ typedef struct {
   /** our connectivity state tracker */
   grpc_connectivity_state_tracker state_tracker;
 
-  /** beginning of the list */
-  connected_list *connected_list;
-  connected_list *connected_list_pick_head;
-  connected_list *connected_list_insertion_head;
+  /** (Dummy) root of the doubly linked list containing READY subchannels */
+  ready_list ready_list;
+  /** Last pick from the ready list. */
+  ready_list *ready_list_last_pick;
 
-  /** XXX */
-  connected_list **subchannels_to_list_elem;
-
-  /** lastest selected subchannel, if any. NULL otherwise */
-  grpc_subchannel *selected;
+  /** Subchannel index to ready_list node. */
+  ready_list **subch_idx_to_rl_node;
 
   connectivity_changed_cb_arg *cb_args;
 } round_robin_lb_policy;
 
+
 /** Returns the next subchannel from the connected list or NULL if the list is
  * empty */
-static grpc_subchannel *get_next_connected_subchannel_locked(
-    round_robin_lb_policy *p) {
-  connected_list *selected;
+static ready_list *peek_next_connected_locked(const round_robin_lb_policy *p) {
+  ready_list *selected;
+  if (grpc_lb_round_robin_trace) {
+    gpr_log(GPR_DEBUG, "PEEKING AT %p FROM %p", p->ready_list_last_pick->next,
+            p->ready_list_last_pick);
+  }
+  selected = p->ready_list_last_pick->next;
 
-  selected = p->connected_list_pick_head;
-  if (selected == NULL) {
-    /* circle around */
-    p->connected_list_pick_head = p->connected_list;
+  while (selected != NULL) {
+    if (selected == &p->ready_list) {
+      GPR_ASSERT(selected->subchannel == NULL);
+      /* skip dummy root */
+      selected = selected->next;
+    } else {
+      GPR_ASSERT(selected->subchannel != NULL);
+      return selected;
+    }
   }
-  selected = p->connected_list_pick_head;
-  if (selected == NULL) {
-    /* empty connected list */
-    return NULL;
-  }
-  /* advance picking head */
-  p->connected_list_pick_head = selected->next;
-  return selected->subchannel;
+  return NULL;
 }
 
-/** Adds the connected subchannel \a csc to \a list.
- *
- * Inserts after p->connected_list_insertion_head. The newly inserted node
- * becomes the new insertion head.
- * */
-static connected_list *add_connected_sc_locked(round_robin_lb_policy *p,
-                                               grpc_subchannel *csc) {
-  connected_list **insert_head = &p->connected_list_insertion_head;
-  connected_list *new_elem = gpr_malloc(sizeof(connected_list));
-  new_elem->subchannel = csc;
-  if (p->connected_list == NULL || *insert_head == NULL) {
-    /* first element */
-    new_elem->next = NULL;
-    new_elem->prev = NULL;
-    p->connected_list = new_elem;
-    p->connected_list_pick_head = new_elem;
-    *insert_head = p->connected_list;
-  } else {
-    if ((*insert_head)->next == NULL) {
-      (*insert_head)->next = new_elem;
-      new_elem->next = NULL;
-    } else {
-      (*insert_head)->next->prev = new_elem;
-      new_elem->next = (*insert_head)->next;
-      (*insert_head)->next = new_elem;
+/** Advance the \a ready_list picking head. */
+static void advance_picking_head(round_robin_lb_policy *p) {
+  if (p->ready_list_last_pick->next != NULL) { /* non-empty list */
+    p->ready_list_last_pick = p->ready_list_last_pick->next;
+    if (p->ready_list_last_pick == &p->ready_list) {
+      /* skip dummy root */
+      p->ready_list_last_pick = p->ready_list_last_pick->next;
     }
-    new_elem->prev = (*insert_head);
-
-    *insert_head = new_elem;
+  } else { /* should be an empty list */
+    GPR_ASSERT(p->ready_list_last_pick == &p->ready_list);
   }
 
-  if (p->connected_list_pick_head == NULL)
-  gpr_log(GPR_INFO, "ADDING %p. INSERT HEAD AT %p. PICK HEAD AT %p", csc,
-          (*insert_head)->subchannel, p->connected_list_pick_head);
-  else
-  gpr_log(GPR_INFO, "ADDING %p. INSERT HEAD AT %p. PICK HEAD AT %p", csc,
-          (*insert_head)->subchannel, p->connected_list_pick_head->subchannel);
+  if (grpc_lb_round_robin_trace) {
+    gpr_log(GPR_DEBUG, "ADVANCED LAST PICK. NOW @ %p", p->ready_list_last_pick);
+  }
+}
 
+/** Adds the connected subchannel \a csc to the list of ready subchannels.
+ *
+ * Inserts before p->ready_list.
+* */
+static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
+                                           grpc_subchannel *csc) {
+  ready_list *new_elem = gpr_malloc(sizeof(ready_list));
+  new_elem->subchannel = csc;
+  if (p->ready_list.prev == NULL) {
+    /* first element */
+    new_elem->next = &p->ready_list;
+    new_elem->prev = &p->ready_list;
+    p->ready_list.next = new_elem;
+    p->ready_list.prev = new_elem;
+  } else {
+    new_elem->next = &p->ready_list;
+    new_elem->prev = p->ready_list.prev;
+    p->ready_list.prev->next = new_elem;
+    p->ready_list.prev = new_elem;
+  }
+  if (grpc_lb_round_robin_trace) {
+    gpr_log(GPR_DEBUG,
+            "[READY] ADDING %p TO READY LIST. (NODE %p)", csc, new_elem);
+  }
   return new_elem;
 }
 
 /** Removes \a node from the list of connected subchannels */
 static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
-                                          connected_list *node) {
-  /* XXX: what if node is the beginning, insertion or pick point? */
-  gpr_log(GPR_INFO, "BAAAAAAAAAAAAAAAR removing %p", node->subchannel);
+                                          ready_list *node) {
   if (node == NULL) {
     return;
   }
-  if (node == p->connected_list_pick_head) {
-    p->connected_list_pick_head = node->next; /* valid even if next is null */
-  }
-  if (node == p->connected_list_insertion_head) {
-    p->connected_list_insertion_head = node->prev; /* valid even if prev is null */
+  if (node == p->ready_list_last_pick) {
+    /* If removing the lastly picked node, reset the last pick pointer to the
+     * dummy root of the list */
+    p->ready_list_last_pick = &p->ready_list;
   }
 
-  if (node->prev != NULL) {
+  /* removing last item */
+  if (node->next == &p->ready_list && node->prev == &p->ready_list) {
+    GPR_ASSERT(p->ready_list.next == node);
+    GPR_ASSERT(p->ready_list.prev == node);
+    p->ready_list.next = NULL;
+    p->ready_list.prev = NULL;
+  } else {
     node->prev->next = node->next;
-  }
-  if (node->next != NULL) {
     node->next->prev = node->prev;
   }
+
+  if (grpc_lb_round_robin_trace) {
+    gpr_log(GPR_INFO, "[READY] REMOVED %p (NODE %p)", node->subchannel, node);
+  }
+
+  node->next = NULL;
+  node->prev = NULL;
+  node->subchannel = NULL;
+
   gpr_free(node);
 }
-
-
-static void del_interested_parties_locked(round_robin_lb_policy *p,
-                                          size_t idx) {
-  pending_pick *pp;
-  for (pp = p->pending_picks; pp; pp = pp->next) {
-    grpc_subchannel_del_interested_party(p->subchannels[idx], pp->pollset);
-  }
-}
-
-/*static void add_interested_parties_locked(round_robin_lb_policy *p,
-                                          size_t idx) {
-  pending_pick *pp;
-  for (pp = p->pending_picks; pp; pp = pp->next) {
-    grpc_subchannel_add_interested_party(p->subchannels[idx], pp->pollset);
-  }
-}*/
 
 void rr_destroy(grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   size_t i;
-  connected_list *cl_elem;
+  ready_list *elem;
   for (i = 0; i < p->num_subchannels; i++) {
-    del_interested_parties_locked(p, i);
     GRPC_SUBCHANNEL_UNREF(p->subchannels[i], "round_robin");
   }
   gpr_free(p->connectivity_changed_cbs);
@@ -216,25 +213,25 @@ void rr_destroy(grpc_lb_policy *pol) {
   gpr_free(p->subchannels);
   gpr_mu_destroy(&p->mu);
 
-  while ( (cl_elem = p->connected_list)) {
-    p->connected_list = cl_elem->next;
-    cl_elem->subchannel = NULL;
-    gpr_free(cl_elem);
+  elem = p->ready_list.next;
+  while (elem != NULL && elem != &p->ready_list) {
+    ready_list *tmp;
+    tmp = elem->next;
+    elem->next = NULL;
+    elem->prev = NULL;
+    elem->subchannel = NULL;
+    gpr_free(elem);
+    elem = tmp;
   }
-  gpr_free(p->subchannels_to_list_elem);
+  gpr_free(p->subch_idx_to_rl_node);
   gpr_free(p->cb_args);
   gpr_free(p);
 }
 
 void rr_shutdown(grpc_lb_policy *pol) {
-  size_t i;
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
-
-  for (i = 0; i < p->num_subchannels; i++) {
-    del_interested_parties_locked(p, i);
-  }
 
   p->shutdown = 1;
   while ((pp = p->pending_picks)) {
@@ -276,18 +273,16 @@ void rr_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
   size_t i;
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
+  ready_list *selected;
   gpr_mu_lock(&p->mu);
-  /* XXX: si ya se ha encontrado resultado, devolverlo e invocar el cb asociado.
-   * Esto hay que cambiarlo para que vaya leyendo de connected_list  */
-  if ((p->selected = get_next_connected_subchannel_locked(p))) {
-    if (p->connected_list_pick_head) {
-      gpr_log(GPR_INFO, "PICKED FROM RR_PICK: %p. PICK HEAD AT %p", p->selected, p->connected_list_pick_head->subchannel);
-    } else {
-      gpr_log(GPR_INFO, "PICKED FROM RR_PICK: %p. PICK HEAD AT %p", p->selected, p->connected_list_pick_head);
-    }
+  if ((selected = peek_next_connected_locked(p))) {
     gpr_mu_unlock(&p->mu);
-    gpr_log(GPR_INFO, "(RR PICK) SETTING TARGET TO %p", p->selected);
-    *target = p->selected;
+    *target = selected->subchannel;
+    if (grpc_lb_round_robin_trace) {
+      gpr_log(GPR_DEBUG, "[PICK] TARGET <-- SUBCHANNEL %p (NODE %p)",
+              selected->subchannel, selected);
+    }
+    advance_picking_head(p);
     on_complete->cb(on_complete->cb_arg, 1);
   } else {
     if (!p->started_picking) {
@@ -296,8 +291,6 @@ void rr_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
     for (i = 0; i < p->num_subchannels; i++) {
       grpc_subchannel_add_interested_party(p->subchannels[i], pollset);
     }
-    /* XXX: se anyade a la lista circular de "clientes" interesados en los
-     * resultados */
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
     pp->pollset = pollset;
@@ -314,6 +307,7 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
   /* index over p->subchannels of this cb's subchannel */
   const size_t this_idx = cb_arg->subchannel_idx;
   pending_pick *pp;
+  ready_list *selected;
 
   int unref = 0;
 
@@ -322,40 +316,38 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
 
   gpr_mu_lock(&p->mu);
 
-
   this_connectivity =
       &p->subchannel_connectivity[this_idx];
-
-  gpr_log(GPR_INFO, "\tCONNECTIVITY CHANGED FOR %d TO %d", this_idx, *this_connectivity);
 
   if (p->shutdown) {
     unref = 1;
   } else {
-    if (p->selected == p->subchannels[this_idx]) {
-      /* connectivity state of the currently selected channel has changed */
-      grpc_connectivity_state_set(&p->state_tracker,
-                                  p->subchannel_connectivity[this_idx],
-                                  "selected_changed");
-    }
     switch (*this_connectivity) {
       case GRPC_CHANNEL_READY:
         grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_READY,
                                     "connecting_ready");
         /* add the newly connected subchannel to the list of connected ones.
          * Note that it goes to the "end of the line". */
-        p->subchannels_to_list_elem[this_idx] =
+        p->subch_idx_to_rl_node[this_idx] =
             add_connected_sc_locked(p, p->subchannels[this_idx]);
         /* at this point we know there's at least one suitable subchannel. Go
          * ahead and pick one and notify the pending suitors in
          * p->pending_picks. This preemtively replicates rr_pick()'s actions. */
-        /*p->selected = get_next_connected_subchannel_locked(p);*/
-        p->selected = p->subchannels[this_idx];
-        gpr_log(GPR_INFO, "SELECTED FROM RR_CON_CHANGED: %p", p->selected);
+        selected = peek_next_connected_locked(p);
+        if (p->pending_picks != NULL) {
+          /* if the selected subchannel is going to be used for the pending
+           * picks, advance the picking head */
+          advance_picking_head(p);
+        }
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
-          *pp->target = p->selected;
-          gpr_log(GPR_INFO, "(CONN CHANGED) SETTING TARGET TO %p", p->selected);
-          grpc_subchannel_del_interested_party(p->selected, pp->pollset);
+          *pp->target = selected->subchannel;
+          if (grpc_lb_round_robin_trace) {
+            gpr_log(GPR_DEBUG,
+                    "[CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
+                    selected->subchannel, selected);
+          }
+          grpc_subchannel_del_interested_party(selected->subchannel, pp->pollset);
           grpc_iomgr_add_delayed_callback(pp->on_complete, 1);
           gpr_free(pp);
         }
@@ -375,24 +367,22 @@ static void rr_connectivity_changed(void *arg, int iomgr_success) {
         grpc_connectivity_state_set(&p->state_tracker,
                                     GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     "connecting_transient_failure");
+
         /* renew state notification */
         grpc_subchannel_notify_on_state_change(
             p->subchannels[this_idx], this_connectivity,
             &p->connectivity_changed_cbs[this_idx]);
 
-        /* remove for now if it was */
-        if (p->subchannels_to_list_elem[this_idx] != NULL) {
-          del_interested_parties_locked(p, this_idx);
-          remove_disconnected_sc_locked(p, p->subchannels_to_list_elem[this_idx]);
-          p->subchannels_to_list_elem[this_idx] = NULL;
+        /* remove for ready list if still present */
+        if (p->subch_idx_to_rl_node[this_idx] != NULL) {
+          remove_disconnected_sc_locked(p, p->subch_idx_to_rl_node[this_idx]);
+          p->subch_idx_to_rl_node[this_idx] = NULL;
         }
-
         break;
       case GRPC_CHANNEL_FATAL_FAILURE:
-        if (p->subchannels_to_list_elem[this_idx] != NULL) {
-          del_interested_parties_locked(p, this_idx);
-          remove_disconnected_sc_locked(p, p->subchannels_to_list_elem[this_idx]);
-          p->subchannels_to_list_elem[this_idx] = NULL;
+        if (p->subch_idx_to_rl_node[this_idx] != NULL) {
+          remove_disconnected_sc_locked(p, p->subch_idx_to_rl_node[this_idx]);
+          p->subch_idx_to_rl_node[this_idx] = NULL;
         }
 
         GPR_SWAP(grpc_subchannel *, p->subchannels[this_idx],
@@ -506,10 +496,12 @@ grpc_lb_policy *grpc_create_round_robin_lb_policy(grpc_subchannel **subchannels,
                             rr_connectivity_changed, &p->cb_args[i]);
   }
 
-  p->connected_list = NULL;
-  p->connected_list_pick_head = NULL;
-  p->connected_list_insertion_head = NULL;
-  p->subchannels_to_list_elem =
+  p->ready_list.subchannel = NULL;
+  p->ready_list.prev = NULL;
+  p->ready_list.next = NULL;
+  p->ready_list_last_pick = &p->ready_list;
+
+  p->subch_idx_to_rl_node =
       gpr_malloc(sizeof(grpc_subchannel *) * num_subchannels);
   return &p->base;
 }

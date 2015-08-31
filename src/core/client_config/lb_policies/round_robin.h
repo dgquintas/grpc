@@ -36,6 +36,8 @@
 
 #include "src/core/client_config/lb_policy.h"
 
+extern int grpc_lb_round_robin_trace;
+
 /** Returns a load balancing policy instance returning successfully connected
  * subchannels in a round robin fashion */
 grpc_lb_policy *grpc_create_round_robin_lb_policy(grpc_subchannel **subchannels,

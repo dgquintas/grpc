@@ -234,7 +234,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
 
   addr_str = grpc_sockaddr_to_uri(addr);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
-  gpr_log(GPR_INFO, "FOOOOOOOOO %s (%d)", addr_str);
 
   fdobj = grpc_fd_create(fd, name);
 

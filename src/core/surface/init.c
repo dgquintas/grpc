@@ -40,6 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/lb_policies/round_robin.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/client_config/resolvers/dns_resolver.h"
 #include "src/core/client_config/resolvers/sockaddr_resolver.h"
@@ -98,6 +99,7 @@ void grpc_init(void) {
     grpc_register_tracer("flowctl", &grpc_flowctl_trace);
     grpc_register_tracer("batch", &grpc_trace_batch);
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
+    grpc_register_tracer("lb_round_robin", &grpc_lb_round_robin_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_tracer_init("GRPC_TRACE");
