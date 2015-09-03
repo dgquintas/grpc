@@ -54,7 +54,9 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     was not NULL).
     If a resolver factory was found, use it to instantiate a resolver and
     return it.
-    If a resolver factory was not found, return NULL. */
+    If a resolver factory was not found, return NULL.
+    The \a subchannel_factory argument is passed verbatim to the chosen resolver
+    factory */
 grpc_resolver *grpc_resolver_create(
     const char *target, grpc_subchannel_factory *subchannel_factory);
 
