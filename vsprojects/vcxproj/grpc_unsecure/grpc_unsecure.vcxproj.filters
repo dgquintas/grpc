@@ -19,6 +19,9 @@
     <ClCompile Include="..\..\..\src\core\channel\client_channel.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\channel\client_microchannel.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\compress_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -405,6 +408,9 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\channel\client_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\channel\client_microchannel.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\channel\compress_filter.h">

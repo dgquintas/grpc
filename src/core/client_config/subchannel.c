@@ -734,3 +734,12 @@ grpc_subchannel_call *create_call(connection *con) {
   grpc_call_stack_init(chanstk, NULL, NULL, callstk);
   return call;
 }
+
+grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel) {
+  return subchannel->mdctx;
+}
+
+grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel) {
+  return subchannel->master;
+}
+
