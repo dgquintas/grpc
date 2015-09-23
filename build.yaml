@@ -660,6 +660,11 @@ targets:
   language: c
   src: [test/core/compression/message_compress_test.c]
   deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+- name: microchannel_test
+  build: test
+  language: c
+  src: [test/core/client_config/microchannel_test.c]
+  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
 - name: multi_init_test
   build: test
   language: c

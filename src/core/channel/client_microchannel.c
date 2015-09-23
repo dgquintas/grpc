@@ -221,7 +221,7 @@ static grpc_iomgr_closure *merge_into_waiting_op(
   return consumed_op;
 }
 
-static char *cc_get_peer(grpc_call_element *elem) {
+static char *cmc_get_peer(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_subchannel_call *subchannel_call;
@@ -332,12 +332,12 @@ static void perform_transport_stream_op(grpc_call_element *elem,
   }
 }
 
-static void cc_start_transport_stream_op(grpc_call_element *elem,
+static void cmc_start_transport_stream_op(grpc_call_element *elem,
                                          grpc_transport_stream_op *op) {
   perform_transport_stream_op(elem, op, 0);
 }
 
-static void cc_start_transport_op(grpc_channel_element *elem,
+static void cmc_start_transport_op(grpc_channel_element *elem,
                                   grpc_transport_op *op) {
   channel_data *chand = elem->channel_data;
   grpc_iomgr_closure *on_consumed = op->on_consumed;
@@ -432,6 +432,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   GPR_ASSERT(args->args[0].value.pointer.p != NULL);
   chand->subchannel =
       args->args[0].value.pointer.copy(args->args[0].value.pointer.p);
+  gpr_log(GPR_DEBUG, "MICRO CHANNEL CREATED WITH SUBCHANNEL %p", chand->subchannel);
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_microchannel");
 }
@@ -445,15 +446,15 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_microchannel_filter = {
-    cc_start_transport_stream_op,
-    cc_start_transport_op,
+    cmc_start_transport_stream_op,
+    cmc_start_transport_op,
     sizeof(call_data),
     init_call_elem,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
-    cc_get_peer,
+    cmc_get_peer,
     "client-microchannel",
 };
 

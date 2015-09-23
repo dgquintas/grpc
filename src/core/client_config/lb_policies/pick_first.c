@@ -33,6 +33,7 @@
 
 #include "src/core/client_config/lb_policy_factory.h"
 #include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/channel/client_microchannel.h"
 
 #include <string.h>
 
@@ -141,6 +142,19 @@ void pf_exit_idle(grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
+#define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                               \
+  gpr_time_add(                                                           \
+      gpr_now(GPR_CLOCK_MONOTONIC),                                       \
+      gpr_time_from_millis((long)(1e3 * (x)), GPR_TIMESPAN))
+
+static void probe_for_lb_server(grpc_subchannel *subchannel) {
+  grpc_channel_args args;
+  args.num_args = 0;
+  args.args = NULL;
+  gpr_log(GPR_DEBUG, "CREATING MICROCHANNEL WITH SUBCHANNEL %p", subchannel);
+  grpc_client_microchannel_create(subchannel, &args);
+}
+
 void pf_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
              grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
              grpc_iomgr_closure *on_complete) {
@@ -150,6 +164,7 @@ void pf_pick(grpc_lb_policy *pol, grpc_pollset *pollset,
   if (p->selected) {
     gpr_mu_unlock(&p->mu);
     *target = p->selected;
+    probe_for_lb_server(p->selected);
     on_complete->cb(on_complete->cb_arg, 1);
   } else {
     if (!p->started_picking) {
@@ -195,6 +210,7 @@ static void pf_connectivity_changed(void *arg, int iomgr_success) {
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = p->selected;
+          probe_for_lb_server(p->selected);
           grpc_subchannel_del_interested_party(p->selected, pp->pollset);
           grpc_iomgr_add_delayed_callback(pp->on_complete, 1);
           gpr_free(pp);
