@@ -314,9 +314,8 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           gpr_mu_unlock(&calld->mu_state);
         } else {
           /* Create subchannel call */
-          grpc_pollset *pollset;
-
-          pollset = calld->waiting_op.bind_pollset;
+          grpc_pollset *pollset = calld->waiting_op.bind_pollset;
+          calld->state = CALL_WAITING_FOR_CALL;
           gpr_mu_unlock(&calld->mu_state);
           grpc_iomgr_closure_init(&calld->async_setup_task, started_call, calld);
           grpc_subchannel_create_call(chand->subchannel, pollset,
@@ -367,7 +366,7 @@ static void cmc_start_transport_op(grpc_channel_element *elem,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
+static void cmc_init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   call_data *calld = elem->call_data;
@@ -384,7 +383,7 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
+static void cmc_destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   grpc_subchannel_call *subchannel_call;
 
@@ -411,10 +410,12 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
+static void cmc_init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
+  size_t i;
+  int subchannel_pointer_arg_found = 0;
   channel_data *chand = elem->channel_data;
 
   memset(chand, 0, sizeof(*chand));
@@ -426,22 +427,30 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   chand->mdctx = metadata_context;
   chand->master = master;
   grpc_pollset_set_init(&chand->pollset_set);
-  GPR_ASSERT(args->num_args == 1);
-  GPR_ASSERT(args->args[0].type == GRPC_ARG_POINTER);
-  GPR_ASSERT(strcmp(GRPC_MICROCHANNEL_SUBCHANNEL_ARG, args->args[0].key) == 0);
-  GPR_ASSERT(args->args[0].value.pointer.p != NULL);
+  for (i = 0; i < args->num_args; i++) {
+    if (args->args[i].type == GRPC_ARG_POINTER &&
+        strcmp(GRPC_MICROCHANNEL_SUBCHANNEL_ARG, args->args[i].key) == 0) {
+      subchannel_pointer_arg_found = 1;
+      break;
+    }
+  }
+  GPR_ASSERT(subchannel_pointer_arg_found != 0);
+  GPR_ASSERT(i < args->num_args);
+  GPR_ASSERT(args->args[i].value.pointer.p != NULL);
   chand->subchannel =
-      args->args[0].value.pointer.copy(args->args[0].value.pointer.p);
-  gpr_log(GPR_DEBUG, "MICRO CHANNEL CREATED WITH SUBCHANNEL %p", chand->subchannel);
+      args->args[i].value.pointer.copy(args->args[i].value.pointer.p);
+  gpr_log(GPR_DEBUG, "MICRO CHANNEL CREATED WITH SUBCHANNEL %p",
+          chand->subchannel);
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_microchannel");
 }
 
 /* Destructor for channel_data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void cmc_destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
   grpc_connectivity_state_destroy(&chand->state_tracker);
   grpc_pollset_set_destroy(&chand->pollset_set);
+  GRPC_SUBCHANNEL_UNREF(chand->subchannel, "client_microchannel_destroy");
   gpr_mu_destroy(&chand->mu_config);
 }
 
@@ -449,11 +458,11 @@ const grpc_channel_filter grpc_client_microchannel_filter = {
     cmc_start_transport_stream_op,
     cmc_start_transport_op,
     sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
+    cmc_init_call_elem,
+    cmc_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    cmc_init_channel_elem,
+    cmc_destroy_channel_elem,
     cmc_get_peer,
     "client-microchannel",
 };
@@ -497,14 +506,13 @@ void grpc_client_microchannel_del_interested_party(grpc_channel_element *elem,
 }
 
 static void *subchannel_arg_copy(void *subchannel) {
-  grpc_subchannel_ref(subchannel);
+  GRPC_SUBCHANNEL_REF(subchannel, "client_microchannel_arg_copy");
   return subchannel;
 }
 
 static void subchannel_arg_destroy(void *subchannel) {
-  grpc_subchannel_unref(subchannel);
+  GRPC_SUBCHANNEL_UNREF(subchannel, "client_microchannel_arg_destroy");
 }
-
 
 grpc_channel *grpc_client_microchannel_create(grpc_subchannel *subchannel,
                                               grpc_channel_args *args) {
@@ -513,11 +521,12 @@ grpc_channel *grpc_client_microchannel_create(grpc_subchannel *subchannel,
   const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_mdctx *mdctx = grpc_subchannel_get_mdctx(subchannel);
   grpc_channel *master = grpc_subchannel_get_master(subchannel);
-  const char* target = grpc_channel_get_target(master);
+  char* target = grpc_channel_get_target(master);
   size_t n = 0;
   grpc_arg tmp;
   grpc_channel_args *args_with_subchannel;
 
+  grpc_mdctx_ref(mdctx);
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
   }
@@ -534,5 +543,7 @@ grpc_channel *grpc_client_microchannel_create(grpc_subchannel *subchannel,
 
   channel = grpc_channel_create_from_filters(target, filters, n,
                                              args_with_subchannel, mdctx, 1);
+  gpr_free(target);
+  grpc_channel_args_destroy(args_with_subchannel);
   return channel;
 }

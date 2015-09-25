@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/client_microchannel.h"
 #include "src/core/iomgr/alarm.h"
 #include "src/core/surface/completion_queue.h"
 
@@ -45,10 +46,11 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   /* forward through to the underlying client channel */
   grpc_channel_element *client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
+  if (client_channel_elem->filter != &grpc_client_channel_filter &&
+      client_channel_elem->filter != &grpc_client_microchannel_filter) {
     gpr_log(GPR_ERROR,
             "grpc_channel_check_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
+            "not a client (micro)channel, but '%s'",
             client_channel_elem->filter->name);
     return GRPC_CHANNEL_FATAL_FAILURE;
   }
@@ -179,10 +181,11 @@ void grpc_channel_watch_connectivity_state(
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
 
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
+  if (client_channel_elem->filter != &grpc_client_channel_filter &&
+      client_channel_elem->filter != &grpc_client_microchannel_filter) {
     gpr_log(GPR_ERROR,
             "grpc_channel_watch_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
+            "not a client (micro)channel, but '%s'",
             client_channel_elem->filter->name);
     grpc_iomgr_add_delayed_callback(&w->on_complete, 1);
   } else {

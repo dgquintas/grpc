@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4D5F3845-C254-BBA6-D9E7-2AD7A894B3FA}</ProjectGuid>
+    <ProjectGuid>{1BB29E4D-8983-4A77-0389-7D2895E9E03B}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -55,13 +55,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>microchannel_test</TargetName>
+    <TargetName>h2_full_microchannel_cancel_in_a_vacuum_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>microchannel_test</TargetName>
+    <TargetName>h2_full_microchannel_cancel_in_a_vacuum_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
@@ -131,10 +131,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\core\client_config\microchannel_test.c">
+    <ClCompile Include="..\..\..\..\vsprojects\dummy.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_fixture_h2_full_microchannel\end2end_fixture_h2_full_microchannel.vcxproj">
+      <Project>{7811D34F-68D5-238A-0256-CB510B48FE48}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_test_cancel_in_a_vacuum\end2end_test_cancel_in_a_vacuum.vcxproj">
+      <Project>{76B5C313-02DA-B8FD-26E2-768A5D7E1B7A}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_certs\end2end_certs.vcxproj">
+      <Project>{80EA2691-C037-6DD3-D3AB-21510BF0E64B}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>
