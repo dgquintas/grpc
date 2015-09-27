@@ -314,11 +314,14 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
 
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connect_in_args args;
+  gpr_timespec timeout;
 
   args.interested_parties = c->pollset_set;
   args.addr = c->addr;
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
+  timeout = gpr_time_sub(args.deadline, gpr_now(args.deadline.clock_type));
+  gpr_log(GPR_DEBUG, "timeout=%d.%09d", timeout.tv_sec, timeout.tv_nsec);
   args.channel_args = c->args;
 
   grpc_connector_connect(exec_ctx, c->connector, &args, &c->connecting_result,

@@ -217,7 +217,7 @@ static void fail_no_event_received(cq_verifier *v) {
 }
 
 void cq_verify(cq_verifier *v) {
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100);
   grpc_event ev;
   expectation *e;
   char *s;

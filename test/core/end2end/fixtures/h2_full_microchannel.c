@@ -60,9 +60,15 @@ typedef struct {
   grpc_connector base;
   gpr_refcount refs;
 
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
+
+  grpc_endpoint *tcp;
+
+  grpc_mdctx *mdctx;
+
+  grpc_closure connected;
 } connector;
 
 static void connector_ref(grpc_connector *con) {
@@ -70,20 +76,23 @@ static void connector_ref(grpc_connector *con) {
   gpr_ref(&c->refs);
 }
 
-static void connector_unref(grpc_connector *con) {
+static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
+    grpc_mdctx_unref(c->mdctx);
     gpr_free(c);
   }
 }
 
-static void connected(void *arg, grpc_endpoint *tcp) {
+static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   connector *c = arg;
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
+  grpc_endpoint *tcp = c->tcp;
   if (tcp != NULL) {
     c->result->transport = grpc_create_chttp2_transport(
-        c->args.channel_args, tcp, c->args.metadata_context, 1);
-    grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0);
+        exec_ctx, c->args.channel_args, tcp, c->mdctx, 1);
+    grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
+                                        0);
     GPR_ASSERT(c->result->transport);
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *));
     c->result->filters[0] = &grpc_http_client_filter;
@@ -93,23 +102,26 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   }
   notify = c->notify;
   c->notify = NULL;
-  grpc_iomgr_add_callback(notify);
+  notify->cb(exec_ctx, notify->cb_arg, 1);
 }
 
-static void connector_shutdown(grpc_connector *con) {}
+static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {}
 
-static void connector_connect(grpc_connector *con,
+static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
                               const grpc_connect_in_args *args,
                               grpc_connect_out_args *result,
-                              grpc_iomgr_closure *notify) {
+                              grpc_closure *notify) {
   connector *c = (connector *)con;
   GPR_ASSERT(c->notify == NULL);
   GPR_ASSERT(notify->cb);
   c->notify = notify;
   c->args = *args;
   c->result = result;
-  grpc_tcp_client_connect(connected, c, args->interested_parties, args->addr,
-                          args->addr_len, args->deadline);
+  c->tcp = NULL;
+  grpc_closure_init(&c->connected, connected, c);
+  grpc_tcp_client_connect(exec_ctx, &c->connected, &c->tcp,
+                          args->interested_parties, args->addr, args->addr_len,
+                          args->deadline);
 }
 
 static const grpc_connector_vtable connector_vtable = {
@@ -124,23 +136,25 @@ typedef struct {
   grpc_subchannel **sniffed_subchannel;
 } subchannel_factory;
 
-static void test_subchannel_factory_ref(grpc_subchannel_factory *scf) {
+static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
   subchannel_factory *f = (subchannel_factory *)scf;
   gpr_ref(&f->refs);
 }
 
-static void test_subchannel_factory_unref(grpc_subchannel_factory *scf) {
+static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_subchannel_factory *scf) {
   subchannel_factory *f = (subchannel_factory *)scf;
   if (gpr_unref(&f->refs)) {
-    GRPC_CHANNEL_INTERNAL_UNREF(f->master, "test_subchannel_factory");
+    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, f->master, "subchannel_factory");
     grpc_channel_args_destroy(f->merge_args);
     grpc_mdctx_unref(f->mdctx);
     gpr_free(f);
   }
 }
 
-static grpc_subchannel *test_subchannel_factory_create_subchannel(
-    grpc_subchannel_factory *scf, grpc_subchannel_args *args) {
+static grpc_subchannel *subchannel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *scf,
+    grpc_subchannel_args *args) {
   subchannel_factory *f = (subchannel_factory *)scf;
   connector *c = gpr_malloc(sizeof(*c));
   grpc_channel_args *final_args =
@@ -148,39 +162,45 @@ static grpc_subchannel *test_subchannel_factory_create_subchannel(
   grpc_subchannel *s;
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
+  c->mdctx = f->mdctx;
+  grpc_mdctx_ref(c->mdctx);
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
   args->args = final_args;
   args->master = f->master;
   s = grpc_subchannel_create(&c->base, args);
-  grpc_connector_unref(&c->base);
+  grpc_connector_unref(exec_ctx, &c->base);
   grpc_channel_args_destroy(final_args);
   *f->sniffed_subchannel = s;
-  gpr_log(GPR_DEBUG, "SNIFFED SUBCHANNEL %p", s);
   return s;
 }
 
 static const grpc_subchannel_factory_vtable test_subchannel_factory_vtable = {
-    test_subchannel_factory_ref, test_subchannel_factory_unref,
-    test_subchannel_factory_create_subchannel};
+    subchannel_factory_ref, subchannel_factory_unref,
+    subchannel_factory_create_subchannel};
+
 
 /* The evil twin of grpc_insecure_channel_create. It allows the test to use the
  * custom-built sniffing subchannel_factory */
-static grpc_channel *channel_create(const char *target,
-                                    const grpc_channel_args *args,
-                                    grpc_subchannel **sniffed_subchannel) {
+grpc_channel *channel_create(const char *target, const grpc_channel_args *args,
+                             grpc_subchannel **sniffed_subchannel) {
   grpc_channel *channel = NULL;
-  const grpc_channel_filter *filters[1];
+#define MAX_FILTERS 1
+  const grpc_channel_filter *filters[MAX_FILTERS];
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create();
   char *target_ipv4_port;
-  filters[0] = &grpc_client_channel_filter;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  size_t n = 0;
   /* force the use of sockaddr resolver to make the resolution synchronous */
   gpr_asprintf(&target_ipv4_port, "ipv4:%s", target);
 
-  channel = grpc_channel_create_from_filters(target_ipv4_port, filters, 1, args,
-                                             mdctx, 1);
+  filters[n++] = &grpc_client_channel_filter;
+  GPR_ASSERT(n <= MAX_FILTERS);
+
+  channel = grpc_channel_create_from_filters(&exec_ctx, target_ipv4_port,
+                                             filters, n, args, mdctx, 1);
 
   f = gpr_malloc(sizeof(*f));
   f->sniffed_subchannel = sniffed_subchannel;
@@ -192,17 +212,21 @@ static grpc_channel *channel_create(const char *target,
   f->master = channel;
   GRPC_CHANNEL_INTERNAL_REF(f->master, "test_subchannel_factory");
   resolver = grpc_resolver_create(target_ipv4_port, &f->base);
+  gpr_free(target_ipv4_port);
   if (!resolver) {
     return NULL;
   }
 
-  grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
-                                   resolver);
-  GRPC_RESOLVER_UNREF(resolver, "test_create");
-  grpc_subchannel_factory_unref(&f->base);
-  gpr_free(target_ipv4_port);
+  grpc_client_channel_set_resolver(
+      &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
+  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_create");
+  grpc_subchannel_factory_unref(&exec_ctx, &f->base);
+
+  grpc_exec_ctx_finish(&exec_ctx);
+
   return channel;
 }
+
 
 typedef struct micro_fullstack_fixture_data {
   char *localaddr;
@@ -233,6 +257,7 @@ static void chttp2_init_client_micro_fullstack(grpc_end2end_test_fixture *f,
 
   ffd->master_channel =
       channel_create(ffd->localaddr, client_args, &ffd->sniffed_subchannel);
+  gpr_log(GPR_INFO, "MASTER CHANNEL %p ", ffd->master_channel);
   /* the following will block. That's ok for this test */
   conn_state = grpc_channel_check_connectivity_state(ffd->master_channel,
                                                      1 /* try to connect */);

@@ -49,19 +49,21 @@
 extern const grpc_channel_filter grpc_client_microchannel_filter;
 
 grpc_connectivity_state grpc_client_microchannel_check_connectivity_state(
-    grpc_channel_element *elem, int try_to_connect);
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
 
 void grpc_client_microchannel_watch_connectivity_state(
-    grpc_channel_element *elem, grpc_connectivity_state *state,
-    grpc_iomgr_closure *on_complete);
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+    grpc_connectivity_state *state, grpc_closure *on_complete);
 
 grpc_pollset_set *grpc_client_microchannel_get_connecting_pollset_set(
     grpc_channel_element *elem);
 
 void grpc_client_microchannel_add_interested_party(
-    grpc_channel_element *channel, grpc_pollset *pollset);
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *channel,
+    grpc_pollset *pollset);
 void grpc_client_microchannel_del_interested_party(
-    grpc_channel_element *channel, grpc_pollset *pollset);
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *channel,
+    grpc_pollset *pollset);
 
 /** XXX args determine if we are using census, compression */
 grpc_channel *grpc_client_microchannel_create(grpc_subchannel *subchannel,

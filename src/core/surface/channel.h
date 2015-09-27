@@ -62,6 +62,8 @@ grpc_mdstr *grpc_channel_get_encodings_accepted_by_peer_string(
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 
+#define GRPC_CHANNEL_REF_COUNT_DEBUG 1
+
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);
 void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
