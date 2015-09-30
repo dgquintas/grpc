@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
 
-  gpr_join_host_port(&ffd->localaddr, "localhost", port);
+  gpr_join_host_port(&ffd->localaddr, "127.0.0.1", port);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create(NULL);

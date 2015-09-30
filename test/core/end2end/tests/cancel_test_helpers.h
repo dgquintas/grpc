@@ -41,15 +41,9 @@ typedef struct {
   const char *expect_details;
 } cancellation_mode;
 
-static grpc_call_error wait_for_deadline(grpc_call *call, void *reserved) {
-  (void)reserved;
-  return GRPC_CALL_OK;
-}
 
 static const cancellation_mode cancellation_modes[] = {
-    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, "Cancelled"},
-    {"deadline", wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED,
-     "Deadline Exceeded"},
+    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, "Cancelled"}
 };
 
 #endif /* GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H */

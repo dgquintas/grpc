@@ -314,11 +314,14 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
 
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connect_in_args args;
+  gpr_timespec timeout;
 
   args.interested_parties = c->pollset_set;
   args.addr = c->addr;
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
+  timeout = gpr_time_sub(args.deadline, gpr_now(args.deadline.clock_type));
+  gpr_log(GPR_DEBUG, "timeout=%d.%09d", timeout.tv_sec, timeout.tv_nsec);
   args.channel_args = c->args;
 
   grpc_connector_connect(exec_ctx, c->connector, &args, &c->connecting_result,
@@ -638,6 +641,7 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
+  waiting_for_connect *w4c;
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
@@ -645,11 +649,28 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
     iomgr_success = 0;
   }
   connectivity_state_changed_locked(exec_ctx, c, "alarm");
+  w4c = c->waiting;
+  c->waiting = NULL;
   gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
   } else {
+    while (w4c != NULL) {
+      /* from continue_creating_call */
+      waiting_for_connect *next = w4c->next;
+      grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel, w4c->pollset);
+        /* from grpc_subchannel_create_call. Notify likely
+         * call.c:finished_loose_op? */
+        w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, 0);
+
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
+      gpr_free(w4c);
+
+      w4c = next;
+    }
+
+
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->master, "connecting");
     GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
   }
@@ -757,3 +778,12 @@ static grpc_subchannel_call *create_call(grpc_exec_ctx *exec_ctx,
   grpc_call_stack_init(exec_ctx, chanstk, NULL, NULL, callstk);
   return call;
 }
+
+grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel) {
+  return subchannel->mdctx;
+}
+
+grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel) {
+  return subchannel->master;
+}
+

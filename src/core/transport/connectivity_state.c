@@ -131,7 +131,8 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(tracker->current_state != GRPC_CHANNEL_FATAL_FAILURE);
   tracker->current_state = state;
   while ((w = tracker->watchers) != NULL) {
-    *w->current = tracker->current_state;
+    const grpc_connectivity_state foo = tracker->current_state;
+    *w->current = foo;
     tracker->watchers = w->next;
     grpc_exec_ctx_enqueue(exec_ctx, w->notify, 1);
     gpr_free(w);

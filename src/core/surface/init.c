@@ -91,7 +91,7 @@ void grpc_init(void) {
     grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
-    grpc_resolver_registry_init("dns:///");
+    grpc_resolver_registry_init("ipv4:///");
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv6_resolver_factory_create());

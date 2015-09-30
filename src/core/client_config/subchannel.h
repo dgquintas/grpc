@@ -44,6 +44,8 @@ typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 
+#define GRPC_SUBCHANNEL_REFCOUNT_DEBUG 1
+
 #ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
@@ -64,13 +66,13 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
-void grpc_subchannel_ref(grpc_subchannel *channel
-                             GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_ref(
+    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *channel
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_ref(grpc_subchannel_call *call
-                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_ref(
+    grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel_call *call
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -136,5 +138,11 @@ struct grpc_subchannel_args {
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                         grpc_subchannel_args *args);
+
+/** Return the metadata context associated with the subchannel */
+grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel);
+
+/** Return the master channel associated with the subchannel */
+grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

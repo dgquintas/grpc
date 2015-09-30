@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/client_microchannel.h"
 #include "src/core/iomgr/alarm.h"
 #include "src/core/surface/completion_queue.h"
 
@@ -47,7 +48,17 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_connectivity_state state;
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
+  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+    state = grpc_client_channel_check_connectivity_state(
+        &exec_ctx, client_channel_elem, try_to_connect);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return state;
+  } else if (client_channel_elem->filter == &grpc_client_microchannel_filter) {
+    state = grpc_client_microchannel_check_connectivity_state(
+        &exec_ctx, client_channel_elem, try_to_connect);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return state;
+  } else {
     gpr_log(GPR_ERROR,
             "grpc_channel_check_connectivity_state called on something that is "
             "not a client channel, but '%s'",
@@ -55,10 +66,6 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_exec_ctx_finish(&exec_ctx);
     return GRPC_CHANNEL_FATAL_FAILURE;
   }
-  state = grpc_client_channel_check_connectivity_state(
-      &exec_ctx, client_channel_elem, try_to_connect);
-  grpc_exec_ctx_finish(&exec_ctx);
-  return state;
 }
 
 typedef enum {
@@ -83,7 +90,19 @@ typedef struct {
 } state_watcher;
 
 static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel, "watch_connectivity");
+  grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
+      grpc_channel_get_channel_stack(w->channel));
+
+  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
+                                "watch_channel_connectivity");
+  } else if (client_channel_elem->filter == &grpc_client_microchannel_filter) {
+    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
+                                "watch_microchannel_connectivity");
+  } else {
+    abort();
+  }
+
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
 }
@@ -123,8 +142,13 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
     w->removed = 1;
     client_channel_elem = grpc_channel_stack_last_element(
         grpc_channel_get_channel_stack(w->channel));
-    grpc_client_channel_del_interested_party(exec_ctx, client_channel_elem,
-                                             grpc_cq_pollset(w->cq));
+    if (client_channel_elem->filter == &grpc_client_channel_filter) {
+      grpc_client_channel_del_interested_party(exec_ctx, client_channel_elem,
+                                               grpc_cq_pollset(w->cq));
+    } else {
+      grpc_client_microchannel_del_interested_party(
+          exec_ctx, client_channel_elem, grpc_cq_pollset(w->cq));
+    }
   }
   gpr_mu_unlock(&w->mu);
   if (due_to_completion) {
@@ -191,18 +215,18 @@ void grpc_channel_watch_connectivity_state(
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
 
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
-    gpr_log(GPR_ERROR,
-            "grpc_channel_watch_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
-            client_channel_elem->filter->name);
-    grpc_exec_ctx_enqueue(&exec_ctx, &w->on_complete, 1);
-  } else {
-    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
+  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
     grpc_client_channel_add_interested_party(&exec_ctx, client_channel_elem,
                                              grpc_cq_pollset(cq));
     grpc_client_channel_watch_connectivity_state(&exec_ctx, client_channel_elem,
                                                  &w->state, &w->on_complete);
+  } else if (client_channel_elem->filter == &grpc_client_microchannel_filter) {
+    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_microchannel_connectivity");
+    grpc_client_microchannel_add_interested_party(
+        &exec_ctx, client_channel_elem, grpc_cq_pollset(cq));
+    grpc_client_microchannel_watch_connectivity_state(
+        &exec_ctx, client_channel_elem, &w->state, &w->on_complete);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
