@@ -416,6 +416,18 @@ void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
   }
 }
 
+int grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
+                                             grpc_subchannel *c,
+                                             grpc_closure *subscribed_notify) {
+  int success;
+  gpr_mu_lock(&c->mu);
+  success = grpc_connectivity_state_change_unsubscribe(
+      exec_ctx, &c->state_tracker, subscribed_notify);
+  gpr_mu_unlock(&c->mu);
+  return success;
+
+}
+
 void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
                                           grpc_subchannel *c,
                                           grpc_transport_op *op) {
@@ -641,7 +653,6 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
-  waiting_for_connect *w4c;
   grpc_subchannel *c = arg;
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
@@ -649,13 +660,15 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
     iomgr_success = 0;
   }
   connectivity_state_changed_locked(exec_ctx, c, "alarm");
-  w4c = c->waiting;
-  c->waiting = NULL;
-  gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
+    gpr_mu_unlock(&c->mu);
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
   } else {
+    waiting_for_connect *w4c;
+    w4c = c->waiting;
+    c->waiting = NULL;
+    gpr_mu_unlock(&c->mu);
     while (w4c != NULL) {
       /* from continue_creating_call */
       waiting_for_connect *next = w4c->next;

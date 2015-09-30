@@ -459,6 +459,7 @@ static void cmc_init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void cmc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
+  grpc_subchannel_state_change_unsubscribe(exec_ctx, chand->subchannel, &chand->foo_cb);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   /*GRPC_SUBCHANNEL_UNREF(exec_ctx, chand->subchannel, "cmc_destroy_channel_elem");
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, chand->master, "cmc_destroy_channel_elem");*/
@@ -487,7 +488,6 @@ grpc_connectivity_state grpc_client_microchannel_check_connectivity_state(
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, GRPC_CHANNEL_CONNECTING,
                                 "microchannel_connecting_changed");
     chand->bla = out;
-    /* XXX hay que borrarse cuando se destruya el channel de este filtro */
     grpc_subchannel_notify_on_state_change(exec_ctx, chand->subchannel,
                                            &chand->bla, &chand->foo_cb);
   }

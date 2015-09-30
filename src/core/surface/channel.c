@@ -296,7 +296,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, grpc_channel *channel) {
   grpc_mdctx_unref(channel->metadata_context);
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
-  memset(channel, 0, sizeof(grpc_channel));
   gpr_free(channel);
 }
 
