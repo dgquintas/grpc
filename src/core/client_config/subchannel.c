@@ -351,6 +351,7 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
   gpr_log(GPR_INFO, "CREATE CALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL %p", c);
   gpr_mu_lock(&c->mu);
   if (c->active != NULL) {
+    gpr_log(GPR_INFO, "CREATE CALL ACTIVE %p", c);
     con = c->active;
     CONNECTION_REF_LOCKED(con, "call");
     gpr_mu_unlock(&c->mu);
@@ -359,6 +360,7 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
     notify->cb(exec_ctx, notify->cb_arg, 1);
   } else {
     waiting_for_connect *w4c = gpr_malloc(sizeof(*w4c));
+    gpr_log(GPR_INFO, "CREATE CALL WAITING FOR CONNECT %p", c);
     w4c->next = c->waiting;
     w4c->notify = notify;
     w4c->pollset = pollset;
@@ -691,11 +693,12 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
                                  int iomgr_success) {
   grpc_subchannel *c = arg;
-  gpr_log(GPR_INFO, "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL %d", iomgr_success);
   if (c->connecting_result.transport != NULL) {
+    gpr_log(GPR_INFO, "SUBCHANNEL CONNECTED WIN. iomgr succ: %d", iomgr_success);
     publish_transport(exec_ctx, c);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    gpr_log(GPR_INFO, "SUBCHANNEL CONNECTED FAIL. iomgr succ: %d", iomgr_success);
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
