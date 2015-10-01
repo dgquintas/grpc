@@ -314,14 +314,11 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
 
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connect_in_args args;
-  gpr_timespec timeout;
 
   args.interested_parties = c->pollset_set;
   args.addr = c->addr;
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
-  timeout = gpr_time_sub(args.deadline, gpr_now(args.deadline.clock_type));
-  gpr_log(GPR_DEBUG, "timeout=%d.%09d", timeout.tv_sec, timeout.tv_nsec);
   args.channel_args = c->args;
 
   grpc_connector_connect(exec_ctx, c->connector, &args, &c->connecting_result,
@@ -351,6 +348,7 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
                                  grpc_subchannel_call **target,
                                  grpc_closure *notify) {
   connection *con;
+  gpr_log(GPR_INFO, "CREATE CALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL %p", c);
   gpr_mu_lock(&c->mu);
   if (c->active != NULL) {
     con = c->active;
@@ -654,6 +652,7 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
+  gpr_log(GPR_INFO, "ALAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARMA %d", iomgr_success);
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
   if (c->disconnected) {
@@ -692,6 +691,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
                                  int iomgr_success) {
   grpc_subchannel *c = arg;
+  gpr_log(GPR_INFO, "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL %d", iomgr_success);
   if (c->connecting_result.transport != NULL) {
     publish_transport(exec_ctx, c);
   } else {
