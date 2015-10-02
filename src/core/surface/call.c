@@ -1340,6 +1340,7 @@ static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
 
   c->cancel_with_status = status;
 
+  gpr_log(GPR_INFO, "CAAAAAAAAAAAAAAAAAANCELLINGGGGGGGGGG %p %d %s", c, status, description);
   return GRPC_CALL_OK;
 }
 
