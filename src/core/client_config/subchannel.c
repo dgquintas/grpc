@@ -445,6 +445,7 @@ void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
     if (c->have_alarm) {
       cancel_alarm = 1;
     }
+    /* XXX cleanup w4c's */
   }
   gpr_mu_unlock(&c->mu);
 

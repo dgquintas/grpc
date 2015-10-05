@@ -1,0 +1,178 @@
+D1002 15:10:51.636167848   15249 test_config.c:135]          test slowdown: machine=1.000000 build=3.000000 total=3.000000
+I1002 15:10:51.636477439   15249 request_with_flags.c:56]    test_invoke_request_with_flags/chttp2/micro_fullstack
+D1002 15:10:51.641846970   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 1 -> 2 [test_subchannel_factory]
+I1002 15:10:51.641934877   15249 h2_full_microchannel.c:256] MASTER CHANNEL 0x61500000fd00 
+D1002 15:10:51.641949653   15249 connectivity_state.c:91]    CONWATCH: client_channel: get IDLE
+D1002 15:10:51.641960769   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 2 -> 3 [resolver]
+D1002 15:10:51.642026316   15249 connectivity_state.c:91]    CONWATCH: pick_first: get IDLE
+D1002 15:10:51.642041321   15249 connectivity_state.c:145]   SET: client_channel: IDLE --> IDLE [new_lb+resolver]
+D1002 15:10:51.642053009   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 3 -> 4 [watch_lb_policy]
+D1002 15:10:51.642075169   15249 connectivity_state.c:101]   CONWATCH: pick_first: from IDLE [cur=IDLE] notify=0x60600000eae8
+D1002 15:10:51.642087920   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 4 -> 5 [resolver]
+D1002 15:10:51.642100656   15249 connectivity_state.c:101]   CONWATCH: subchannel: from IDLE [cur=IDLE] notify=0x60f00000ef70
+D1002 15:10:51.642112901   15249 subchannel.c:408]           SUBCHANNEL: 0x61300000de80   ref 1 -> 2 connecting
+D1002 15:10:51.642121836   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 5 -> 6 [connecting]
+D1002 15:10:51.642134068   15249 connectivity_state.c:145]   SET: subchannel: IDLE --> CONNECTING [state_change]
+D1002 15:10:51.642233473   15249 tcp_client_posix.c:282]     CLIENT_CONNECT: ipv4:127.0.0.1:45249: asynchronously connecting
+D1002 15:10:51.642261091   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 6 -> 5 [resolver]
+D1002 15:10:51.642274450   15249 connectivity_state.c:145]   SET: pick_first: IDLE --> CONNECTING [connecting_changed]
+D1002 15:10:51.642285480   15249 connectivity_state.c:101]   CONWATCH: subchannel: from CONNECTING [cur=CONNECTING] notify=0x60f00000ef70
+D1002 15:10:51.642297380   15249 connectivity_state.c:145]   SET: client_channel: IDLE --> CONNECTING [lb_changed]
+D1002 15:10:51.642307627   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 5 -> 6 [watch_lb_policy]
+D1002 15:10:51.642319081   15249 connectivity_state.c:101]   CONWATCH: pick_first: from CONNECTING [cur=CONNECTING] notify=0x60600000e488
+D1002 15:10:51.642328673   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 6 -> 5 [watch_lb_policy]
+D1002 15:10:51.642414329   15249 client_microchannel.c:462]  MICRO CHANNEL CREATED WITH SUBCHANNEL 0x61300000de80
+I1002 15:10:51.642439108   15249 h2_full_microchannel.c:267] CHANNEL WRAPPING SUBCHANNEL: 0x61400000fa40(0x61300000de80)
+D1002 15:10:51.642494660   15249 channel.c:264]              CHANNEL:   ref 0x61400000fa40 1 -> 2 [call]
+I1002 15:10:51.642508779   15249 client_microchannel.c:399]  ZZZZZZZZZZ calld->state = CALL_WAITING_FOR_CALL
+D1002 15:10:51.642522288   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 2 -> 3 [alarm]
+D1002 15:10:51.642547591   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 3 -> 4 [completion]
+D1002 15:10:51.642570717   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 4 -> 5 [receiving]
+D1002 15:10:51.642594219   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 5 -> 6 [sending]
+D1002 15:10:51.642603318   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 6 -> 7 [loose-op]
+I1002 15:10:51.642610124   15249 call.c:1374]                REGISTERING ON_DONE_BIND, 0x61f00000f748
+I1002 15:10:51.642737535   15249 client_microchannel.c:274]  OP[client-microchannel:0x61f00000f860]: SEND_LAST:0x61f00000f728[METADATA{key=3a 61 75 74 68 6f 72 69 74 79 ':authority' value=66 6f 6f 2e 74 65 73 74 2e 67 6f 6f 67 6c 65 2e 66 72 'foo.test.google.fr', key=3a 70 61 74 68 ':path' value=2f 66 6f 6f '/foo', key=67 72 70 63 2d 65 6e 63 6f 64 69 6e 67 'grpc-encoding' value=69 64 65 6e 74 69 74 79 'identity', key=67 72 70 63 2d 61 63 63 65 70 74 2d 65 6e 63 6f 64 69 6e 67 'grpc-accept-encoding' value=64 65 66 6c 61 74 65 2c 67 7a 69 70 'deflate,gzip' deadline=143526.550236508}, BEGIN_MESSAGE:11, SLICE:11] RECV:0x61f00000f708:max_recv_bytes=65536 BIND ON_CONSUMED:0x61f00000f748
+I1002 15:10:51.642760698   15249 client_microchannel.c:341]  YYYYYYYYYY calld->state = CALL_WAITING_FOR_CALL
+I1002 15:10:51.642771137   15249 subchannel.c:351]           CREATE CALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL 0x61300000de80
+I1002 15:10:51.642779422   15249 subchannel.c:363]           CREATE CALL WAITING FOR CONNECT 0x61300000de80
+D1002 15:10:51.642787128   15249 subchannel.c:370]           SUBCHANNEL: 0x61300000de80   ref 2 -> 3 waiting_for_connect
+D1002 15:10:51.642935593   15249 tcp_server_posix.c:337]     SERVER_CONNECT: incoming connection: ipv4:127.0.0.1:49497
+D1002 15:10:51.643218922   15249 channel.c:264]              CHANNEL:   ref 0x61600000f080 1 -> 2 [connectivity]
+D1002 15:10:51.643233488   15249 connectivity_state.c:101]   CONWATCH: server_transport: from IDLE [cur=READY] notify=0x61600000f1e0
+D1002 15:10:51.643270345   15249 tcp_client_posix.c:125]     CLIENT_CONNECT: ipv4:127.0.0.1:45249: on_writable: success=1
+D1002 15:10:51.643298214   15249 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 06 04 00 00 00 00 00 00 04 00 00 ff ff '...............'
+D1002 15:10:51.643313451   15249 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 04 08 00 00 00 00 00 00 0f 00 01 '.............'
+D1002 15:10:51.643348645   15249 connectivity_state.c:101]   CONWATCH: server_transport: from READY [cur=READY] notify=0x61600000f1e0
+D1002 15:10:51.643362957   15249 tcp_client_posix.c:98]      CLIENT_CONNECT: ipv4:127.0.0.1:45249: on_alarm: success=0
+I1002 15:10:51.643511984   15249 subchannel.c:697]           SUBCHANNEL CONNECTED WIN. iomgr succ: 1
+D1002 15:10:51.643574888   15249 subchannel.c:599]           SUBCHANNEL: 0x61300000de80   ref 3 -> 4 state_watcher
+D1002 15:10:51.643585398   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 5 -> 4 [connecting]
+D1002 15:10:51.643594400   15249 subchannel.c:601]           SUBCHANNEL: 0x61300000de80 unref 4 -> 3 connecting
+D1002 15:10:51.643604779   15249 connectivity_state.c:101]   CONWATCH: client_transport: from READY [cur=READY] notify=0x60600000d2e0
+D1002 15:10:51.643628161   15249 connectivity_state.c:145]   SET: subchannel: CONNECTING --> READY [connected]
+D1002 15:10:51.643650266   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 50 52 49 20 2a 20 48 54 54 50 2f 32 2e 30 0d 0a 0d 0a 53 4d 0d 0a 0d 0a 'PRI * HTTP/2.0....SM....'
+D1002 15:10:51.643660561   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 12 04 00 00 00 00 00 00 02 00 00 00 00 00 03 00 00 00 00 00 04 00 00 ff ff '...........................'
+D1002 15:10:51.643668172   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 04 08 00 00 00 00 00 00 0f 00 01 '.............'
+D1002 15:10:51.643687631   15249 connectivity_state.c:145]   SET: pick_first: CONNECTING --> READY [connecting_ready]
+D1002 15:10:51.643700278   15249 connectivity_state.c:101]   CONWATCH: subchannel: from READY [cur=READY] notify=0x60f00000ef70
+I1002 15:10:51.643710523   15249 subchannel.c:351]           CREATE CALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL 0x61300000de80
+I1002 15:10:51.643718303   15249 subchannel.c:354]           CREATE CALL ACTIVE 0x61300000de80
+D1002 15:10:51.643726029   15249 subchannel.c:356]           CONNECTION: 0x60c00000a000   ref 0 -> 1 call
+D1002 15:10:51.643733530   15249 subchannel.c:356]           SUBCHANNEL: 0x61300000de80   ref 3 -> 4 call
+I1002 15:10:51.643763023   15249 client_microchannel.c:191]  XXXXXXXXXX calld->state = CALL_ACTIVE
+I1002 15:10:51.643868091   15249 http_client_filter.c:165]   OP[http-client:0x61b00001f1a0]: SEND_LAST:0x61f00000f728[METADATA{key=3a 61 75 74 68 6f 72 69 74 79 ':authority' value=66 6f 6f 2e 74 65 73 74 2e 67 6f 6f 67 6c 65 2e 66 72 'foo.test.google.fr', key=3a 70 61 74 68 ':path' value=2f 66 6f 6f '/foo', key=67 72 70 63 2d 65 6e 63 6f 64 69 6e 67 'grpc-encoding' value=69 64 65 6e 74 69 74 79 'identity', key=67 72 70 63 2d 61 63 63 65 70 74 2d 65 6e 63 6f 64 69 6e 67 'grpc-accept-encoding' value=64 65 66 6c 61 74 65 2c 67 7a 69 70 'deflate,gzip' deadline=143526.550236508}, BEGIN_MESSAGE:11, SLICE:11] RECV:0x61f00000f708:max_recv_bytes=65536 BIND ON_CONSUMED:0x61f00000f748
+I1002 15:10:51.644007105   15249 connected_channel.c:70]     OP[connected:0x61b00001f1b8]: SEND_LAST:0x61f00000f728[METADATA{key=3a 73 63 68 65 6d 65 ':scheme' value=68 74 74 70 'http', key=3a 6d 65 74 68 6f 64 ':method' value=50 4f 53 54 'POST', key=3a 61 75 74 68 6f 72 69 74 79 ':authority' value=66 6f 6f 2e 74 65 73 74 2e 67 6f 6f 67 6c 65 2e 66 72 'foo.test.google.fr', key=3a 70 61 74 68 ':path' value=2f 66 6f 6f '/foo', key=67 72 70 63 2d 65 6e 63 6f 64 69 6e 67 'grpc-encoding' value=69 64 65 6e 74 69 74 79 'identity', key=67 72 70 63 2d 61 63 63 65 70 74 2d 65 6e 63 6f 64 69 6e 67 'grpc-accept-encoding' value=64 65 66 6c 61 74 65 2c 67 7a 69 70 'deflate,gzip', key=74 65 'te' value=74 72 61 69 6c 65 72 73 'trailers', key=63 6f 6e 74 65 6e 74 2d 74 79 70 65 'content-type' value=61 70 70 6c 69 63 61 74 69 6f 6e 2f 67 72 70 63 'application/grpc', key=75 73 65 72 2d 61 67 65 6e 74 'user-agent' value=67 72 70 63 2d 63 2f 30 2e 31 31 2e 30 2e 30 20 28 6c 69 6e 75 78 29 'grpc-c/0.11.0.0 (linux)' deadline=143526.550236508}, BEGIN_MESSAGE:11, SLICE:11] RECV:0x61b00001f2a8:max_recv_bytes=65536 BIND ON_CONSUMED:0x61f00000f748
+D1002 15:10:51.644036718   15249 subchannel.c:342]           SUBCHANNEL: 0x61300000de80 unref 4 -> 3 waiting_for_connect
+D1002 15:10:51.644065924   15249 connectivity_state.c:145]   SET: client_channel: CONNECTING --> READY [lb_changed]
+D1002 15:10:51.644077416   15249 channel.c:264]              CHANNEL:   ref 0x61500000fd00 4 -> 5 [watch_lb_policy]
+D1002 15:10:51.644085376   15249 connectivity_state.c:101]   CONWATCH: pick_first: from READY [cur=READY] notify=0x60600000c028
+D1002 15:10:51.644094996   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 5 -> 4 [watch_lb_policy]
+I1002 15:10:51.644102354   15249 call.c:1349]                INVOKED LOOSE_OP over call 0x61f00000ee80
+D1002 15:10:51.644110270   15249 call.c:495]                 CALL: unref 0x61f00000ee80 7 -> 6 [loose-op]
+D1002 15:10:51.644189245   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 e7 01 04 00 00 00 01 40 07 3a 73 63 68 '.........@.:sch'
+D1002 15:10:51.644199645   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 65 6d 65 04 68 74 74 70 40 07 3a 6d 65 74 68 'eme.http@.:meth'
+D1002 15:10:51.644206797   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 6f 64 04 50 4f 53 54 40 0a 3a 61 75 74 68 6f 'od.POST@.:autho'
+D1002 15:10:51.644212816   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 72 69 74 79 12 'rity.'
+D1002 15:10:51.644220906   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 66 6f 6f 2e 74 65 73 74 2e 67 6f 6f 67 6c 65 2e 66 72 'foo.test.google.fr'
+D1002 15:10:51.644228084   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 40 05 3a 70 61 74 68 04 2f 66 6f 6f 40 0d 67 '@.:path./foo@.g'
+D1002 15:10:51.644261358   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 72 70 63 2d 65 6e 63 6f 64 69 6e 67 08 69 64 'rpc-encoding.id'
+D1002 15:10:51.644272415   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 65 6e 74 69 74 79 40 14 'entity@.'
+D1002 15:10:51.644281978   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 67 72 70 63 2d 61 63 63 65 70 74 2d 65 6e 63 6f 64 69 6e 67 'grpc-accept-encoding'
+D1002 15:10:51.644301490   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 0c 64 65 66 6c 61 74 65 2c 67 7a 69 70 40 02 '.deflate,gzip@.'
+D1002 15:10:51.644308728   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 74 65 08 74 72 61 69 6c 65 72 73 40 0c 63 6f 'te.trailers@.co'
+D1002 15:10:51.644317211   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 6e 74 65 6e 74 2d 74 79 70 65 10 'ntent-type.'
+D1002 15:10:51.644324812   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 61 70 70 6c 69 63 61 74 69 6f 6e 2f 67 72 70 63 'application/grpc'
+D1002 15:10:51.644335154   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 40 0a 75 73 65 72 2d 61 67 65 6e 74 17 '@.user-agent.'
+D1002 15:10:51.644343882   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 67 72 70 63 2d 63 2f 30 2e 31 31 2e 30 2e 30 20 28 6c 69 6e 75 78 29 'grpc-c/0.11.0.0 (linux)'
+D1002 15:10:51.644351000   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 40 0c 67 72 70 63 2d 74 69 6d 65 6f 75 74 06 '@.grpc-timeout.'
+D1002 15:10:51.644356847   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 32 32 34 30 30 75 '22400u'
+D1002 15:10:51.644363867   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 10 00 01 00 00 00 01 00 00 00 00 0b 68 '..............h'
+D1002 15:10:51.644372550   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 65 6c 6c 6f 20 77 6f 72 6c 64 00 00 04 08 00 'ello world.....'
+D1002 15:10:51.644382198   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 00 01 00 00 00 01 '........'
+D1002 15:10:51.644420502   15249 call.c:495]                 CALL: unref 0x61f00000ee80 6 -> 5 [sending]
+D1002 15:10:51.644461794   15249 tcp_posix.c:159]            read: success=1
+D1002 15:10:51.644550766   15249 tcp_posix.c:163]            READ 0x61400000f840: 50 52 49 20 2a 20 48 54 54 50 2f 32 2e 30 0d 0a 0d 0a 53 4d 0d 0a 0d 0a 00 00 12 04 00 00 00 00 00 00 02 00 00 00 00 00 03 00 00 00 00 00 04 00 00 ff ff 00 00 04 08 00 00 00 00 00 00 0f 00 01 00 00 e7 01 04 00 00 00 01 40 07 3a 73 63 68 65 6d 65 04 68 74 74 70 40 07 3a 6d 65 74 68 6f 64 04 50 4f 53 54 40 0a 3a 61 75 74 68 6f 72 69 74 79 12 66 6f 6f 2e 74 65 73 74 2e 67 6f 6f 67 6c 65 2e 66 72 40 05 3a 70 61 74 68 04 2f 66 6f 6f 40 0d 67 72 70 63 2d 65 6e 63 6f 64 69 6e 67 08 69 64 65 6e 74 69 74 79 40 14 67 72 70 63 2d 61 63 63 65 70 74 2d 65 6e 63 6f 64 69 6e 67 0c 64 65 66 6c 61 74 65 2c 67 7a 69 70 40 02 74 65 08 74 72 61 69 6c 65 72 73 40 0c 63 6f 6e 74 65 6e 74 2d 74 79 70 65 10 61 70 70 6c 69 63 61 74 69 6f 6e 2f 67 72 70 63 40 0a 75 73 65 72 2d 61 67 65 6e 74 17 67 72 70 63 2d 63 2f 30 2e 31 31 2e 30 2e 30 20 28 6c 69 6e 75 78 29 40 0c 67 72 70 63 2d 74 69 6d 65 6f 75 74 06 32 32 34 30 30 75 00 00 10 00 01 00 00 00 01 00 00 00 00 0b 68 65 6c 6c 6f 20 77 6f 72 6c 64 00 00 04 08 00 00 00 00 01 00 00 00 01 'PRI * HTTP/2.0....SM.....................................................@.:scheme.http@.:method.POST@.:authority.foo.test.google.fr@.:path./foo@.grpc-encoding.identity@.grpc-accept-encoding.deflate,gzip@.te.trailers@.content-type.application/grpc@.user-agent.grpc-c/0.11.0.0 (linux)@.grpc-timeout.22400u..............hello world.............'
+D1002 15:10:51.644608330   15249 channel.c:264]              CHANNEL:   ref 0x61600000f080 2 -> 3 [call]
+D1002 15:10:51.644620778   15249 call.c:447]                 CALL:   ref 0x62100001cd00 2 -> 3 [receiving]
+D1002 15:10:51.644791756   15249 tcp_posix.c:159]            read: success=1
+D1002 15:10:51.644809907   15249 tcp_posix.c:163]            READ 0x61400000f640: 00 00 06 04 00 00 00 00 00 00 04 00 00 ff ff 00 00 04 08 00 00 00 00 00 00 0f 00 01 '............................'
+D1002 15:10:51.644860234   15249 call.c:447]                 CALL:   ref 0x62100001cd00 3 -> 4 [alarm]
+D1002 15:10:51.644893124   15249 call.c:447]                 CALL:   ref 0x62100001cd00 4 -> 5 [receiving]
+I1002 15:10:51.644913590   15249 server.c:652]               OP[server:0x62100001d6c8]: RECV:0x62100001d588:max_recv_bytes=65525
+I1002 15:10:51.644929192   15249 http_server_filter.c:232]   OP[http-server:0x62100001d6f8]: RECV:0x62100001d7a8:max_recv_bytes=65525
+I1002 15:10:51.644946217   15249 connected_channel.c:70]     OP[connected:0x62100001d710]: RECV:0x62100001d7a8:max_recv_bytes=65525
+D1002 15:10:51.644963218   15249 call.c:495]                 CALL: unref 0x62100001cd00 5 -> 4 [receiving]
+D1002 15:10:51.644975981   15249 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 00 04 01 00 00 00 00 '.........'
+D1002 15:10:51.644997822   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 00 04 01 00 00 00 00 '.........'
+D1002 15:10:51.645018572   15249 tcp_posix.c:159]            read: success=1
+D1002 15:10:51.645028251   15249 tcp_posix.c:163]            READ 0x61400000f640: 00 00 00 04 01 00 00 00 00 '.........'
+D1002 15:10:51.645058480   15249 tcp_posix.c:159]            read: success=1
+D1002 15:10:51.645068654   15249 tcp_posix.c:163]            READ 0x61400000f840: 00 00 00 04 01 00 00 00 00 '.........'
+I1002 15:10:53.905075364   15249 call.c:1343]                CAAAAAAAAAAAAAAAAAANCELLINGGGGGGGGGG 0x61f00000ee80 4 Deadline Exceeded
+D1002 15:10:53.905206156   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 5 -> 6 [loose-op]
+I1002 15:10:53.905271963   15249 call.c:1380]                REGISTERING ALLOCATED, 0x61f00000f748
+I1002 15:10:53.905399067   15249 client_microchannel.c:274]  OP[client-microchannel:0x61f00000f860]: CANCEL:4 ON_CONSUMED:0x60400000cad8
+I1002 15:10:53.905472467   15249 http_client_filter.c:165]   OP[http-client:0x61b00001f1a0]: CANCEL:4 ON_CONSUMED:0x60400000cad8
+I1002 15:10:53.905550066   15249 connected_channel.c:70]     OP[connected:0x61b00001f1b8]: CANCEL:4 ON_CONSUMED:0x60400000cad8
+D1002 15:10:53.905704313   15249 call.c:495]                 CALL: unref 0x61f00000ee80 6 -> 5 [alarm]
+I1002 15:10:53.905778980   15249 call.c:1343]                CAAAAAAAAAAAAAAAAAANCELLINGGGGGGGGGG 0x62100001cd00 4 Deadline Exceeded
+D1002 15:10:53.905807937   15249 call.c:447]                 CALL:   ref 0x62100001cd00 4 -> 5 [loose-op]
+I1002 15:10:53.905828234   15249 call.c:1380]                REGISTERING ALLOCATED, 0x62100001d5c8
+I1002 15:10:53.905900546   15249 server.c:652]               OP[server:0x62100001d6c8]: CANCEL:4 ON_CONSUMED:0x60400000c818
+I1002 15:10:53.905967346   15249 http_server_filter.c:232]   OP[http-server:0x62100001d6f8]: CANCEL:4 ON_CONSUMED:0x60400000c818
+I1002 15:10:53.906036746   15249 connected_channel.c:70]     OP[connected:0x62100001d710]: CANCEL:4 ON_CONSUMED:0x60400000c818
+D1002 15:10:53.906129009   15249 call.c:495]                 CALL: unref 0x62100001cd00 5 -> 4 [alarm]
+I1002 15:10:53.906155205   15249 call.c:1361]                INVOKED LOOSE_OP_ALLOCATED over call 0x61f00000ee80
+I1002 15:10:53.906193579   15249 call.c:1349]                INVOKED LOOSE_OP over call 0x61f00000ee80
+D1002 15:10:53.906234774   15249 call.c:495]                 CALL: unref 0x61f00000ee80 5 -> 4 [loose-op]
+D1002 15:10:53.906291681   15249 call.c:495]                 CALL: unref 0x61f00000ee80 4 -> 3 [closed]
+D1002 15:10:53.906357713   15249 call.c:447]                 CALL:   ref 0x61f00000ee80 3 -> 4 [completing]
+D1002 15:10:53.906422082   15249 call.c:495]                 CALL: unref 0x61f00000ee80 4 -> 3 [completing]
+D1002 15:10:53.906458060   15249 call.c:495]                 CALL: unref 0x61f00000ee80 3 -> 2 [receiving]
+D1002 15:10:53.906514330   15249 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 04 03 00 00 00 00 01 00 00 00 02 '.............'
+I1002 15:10:53.906658564   15249 call.c:1361]                INVOKED LOOSE_OP_ALLOCATED over call 0x62100001cd00
+I1002 15:10:53.906702380   15249 call.c:1349]                INVOKED LOOSE_OP over call 0x62100001cd00
+D1002 15:10:53.906731663   15249 call.c:495]                 CALL: unref 0x62100001cd00 4 -> 3 [loose-op]
+D1002 15:10:53.906792719   15249 call.c:495]                 CALL: unref 0x62100001cd00 3 -> 2 [closed]
+D1002 15:10:53.906865788   15249 call.c:495]                 CALL: unref 0x62100001cd00 2 -> 1 [receiving]
+D1002 15:10:53.906938761   15249 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 04 03 00 00 00 00 01 00 00 00 02 '.............'
+D1002 15:10:53.907060799   15249 call.c:495]                 CALL: unref 0x61f00000ee80 2 -> 1 [completion]
+D1002 15:10:53.907172387   15249 call.c:495]                 CALL: unref 0x61f00000ee80 1 -> 0 [destroy]
+D1002 15:10:53.907245265   15249 subchannel.c:762]           CONNECTION: 0x60c00000a000 unref 1 -> 0 call
+D1002 15:10:53.907283107   15249 subchannel.c:762]           SUBCHANNEL: 0x61300000de80 unref 3 -> 2 call
+D1002 15:10:53.907334396   15249 channel.c:305]              CHANNEL: unref 0x61400000fa40 2 -> 1 [call]
+D1002 15:10:53.907414516   15249 request_with_flags.c:78]    SHUTTING DOWN SERVER
+D1002 15:10:53.907472370   15249 channel.c:264]              CHANNEL:   ref 0x61600000f080 3 -> 4 [broadcast]
+D1002 15:10:53.907585361   15249 connectivity_state.c:145]   SET: server_transport: READY --> FATAL_FAILURE [close_transport]
+D1002 15:10:53.907635783   15249 channel.c:305]              CHANNEL: unref 0x61600000f080 4 -> 3 [broadcast]
+D1002 15:10:53.907683959   15249 call.c:495]                 CALL: unref 0x62100001cd00 1 -> 0 [destroy]
+D1002 15:10:53.907730256   15249 channel.c:305]              CHANNEL: unref 0x61600000f080 3 -> 2 [call]
+D1002 15:10:53.907895398   15249 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 17 07 00 00 00 00 00 00 00 00 00 00 00 00 00 '.................'
+D1002 15:10:53.907949012   15249 tcp_posix.c:397]            WRITE 0x61400000f840: 53 65 72 76 65 72 20 73 68 75 74 64 6f 77 6e 'Server shutdown'
+D1002 15:10:53.908025885   15249 channel.c:305]              CHANNEL: unref 0x61600000f080 2 -> 1 [connectivity]
+D1002 15:10:53.908102943   15249 server.c:398]               finish_destroy_channel: 0x61600000f080
+D1002 15:10:53.908132035   15249 channel.c:305]              CHANNEL: unref 0x61600000f080 1 -> 0 [server]
+D1002 15:10:53.908217147   15249 tcp_posix.c:159]            read: success=0
+D1002 15:10:53.908881688   15249 request_with_flags.c:88]    SHUTTING DOWN CLIENT
+D1002 15:10:53.908937828   15249 connectivity_state.c:145]   SET: client_microchannel: IDLE --> FATAL_FAILURE [disconnect]
+D1002 15:10:53.908973976   15249 channel.c:305]              CHANNEL: unref 0x61400000fa40 1 -> 0 [channel]
+D1002 15:10:53.909092786   15249 connectivity_state.c:145]   SET: client_channel: READY --> FATAL_FAILURE [disconnect]
+D1002 15:10:53.909137329   15249 connectivity_state.c:145]   SET: pick_first: READY --> FATAL_FAILURE [shutdown]
+D1002 15:10:53.909187475   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 4 -> 3 [subchannel_factory]
+D1002 15:10:53.909251809   15249 pick_first.c:288]           SUBCHANNEL: 0x61300000de80   ref 2 -> 3 pf_broadcast
+D1002 15:10:53.909287115   15249 subchannel.c:440]           CONNECTION: 0x60c00000a000   ref 0 -> 1 transport-op
+D1002 15:10:53.909311502   15249 subchannel.c:440]           SUBCHANNEL: 0x61300000de80   ref 3 -> 4 transport-op
+D1002 15:10:53.909338890   15249 connectivity_state.c:145]   SET: subchannel: READY --> FATAL_FAILURE [disconnect]
+D1002 15:10:53.909381508   15249 connectivity_state.c:145]   SET: client_transport: READY --> FATAL_FAILURE [close_transport]
+D1002 15:10:53.909428237   15249 subchannel.c:458]           CONNECTION: 0x60c00000a000 unref 1 -> 0 transport-op
+D1002 15:10:53.909453991   15249 subchannel.c:458]           SUBCHANNEL: 0x61300000de80 unref 4 -> 3 transport-op
+D1002 15:10:53.909488095   15249 pick_first.c:294]           SUBCHANNEL: 0x61300000de80 unref 3 -> 2 pf_broadcast
+D1002 15:10:53.909525406   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 3 -> 2 [channel]
+D1002 15:10:53.909555050   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 2 -> 1 [watch_lb_policy]
+D1002 15:10:53.909586798   15249 connectivity_state.c:145]   SET: client_channel: FATAL_FAILURE --> FATAL_FAILURE [resolver_gone]
+D1002 15:10:53.909614978   15249 channel.c:305]              CHANNEL: unref 0x61500000fd00 1 -> 0 [resolver]
+D1002 15:10:53.909691385   15249 pick_first.c:102]           SUBCHANNEL: 0x61300000de80 unref 2 -> 1 pick_first
+D1002 15:10:53.909741090   15249 connectivity_state.c:145]   SET: subchannel: FATAL_FAILURE --> FATAL_FAILURE [connection_failed]
+D1002 15:10:53.909766458   15249 connectivity_state.c:145]   SET: subchannel: FATAL_FAILURE --> FATAL_FAILURE [transport_state_changed]
+D1002 15:10:53.909796914   15249 subchannel.c:523]           SUBCHANNEL: 0x61300000de80 unref 1 -> 0 state_watcher
+D1002 15:10:53.909885403   15249 tcp_posix.c:159]            read: success=0

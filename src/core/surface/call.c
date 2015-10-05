@@ -1346,6 +1346,7 @@ static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
 
 static void finished_loose_op(grpc_exec_ctx *exec_ctx, void *call,
                               int success_ignored) {
+  gpr_log(GPR_INFO, "INVOKED LOOSE_OP over call %p", call);
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "loose-op");
 }
 
@@ -1357,6 +1358,7 @@ typedef struct {
 static void finished_loose_op_allocated(grpc_exec_ctx *exec_ctx, void *alloc,
                                         int success) {
   finished_loose_op_allocated_args *args = alloc;
+  gpr_log(GPR_INFO, "INVOKED LOOSE_OP_ALLOCATED over call %p", args->call);
   finished_loose_op(exec_ctx, args->call, success);
   gpr_free(args);
 }
@@ -1369,11 +1371,13 @@ static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
   if (op->cancel_with_status != GRPC_STATUS_OK || op->bind_pollset) {
     GRPC_CALL_INTERNAL_REF(call, "loose-op");
     if (op->bind_pollset) {
+      gpr_log(GPR_INFO, "REGISTERING ON_DONE_BIND, %p", &call->on_done_bind);
       op->on_consumed = &call->on_done_bind;
     } else {
       finished_loose_op_allocated_args *args = gpr_malloc(sizeof(*args));
       args->call = call;
       grpc_closure_init(&args->closure, finished_loose_op_allocated, args);
+      gpr_log(GPR_INFO, "REGISTERING ALLOCATED, %p", &call->on_done_bind);
       op->on_consumed = &args->closure;
     }
   }

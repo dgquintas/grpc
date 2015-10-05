@@ -1,0 +1,1057 @@
+D1002 15:10:01.127870284   15144 test_config.c:135]          test slowdown: machine=1.000000 build=3.000000 total=3.000000
+I1002 15:10:01.132785411   15144 request_with_flags.c:56]    test_invoke_request_with_flags/chttp2/micro_fullstack
+D1002 15:10:01.255964387   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 1 -> 2 [test_subchannel_factory]
+I1002 15:10:01.256118780   15144 h2_full_microchannel.c:256] MASTER CHANNEL 0x61500000fd00 
+D1002 15:10:01.256146873   15144 connectivity_state.c:91]    CONWATCH: client_channel: get IDLE
+D1002 15:10:01.256164547   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 2 -> 3 [resolver]
+D1002 15:10:01.256283739   15144 connectivity_state.c:91]    CONWATCH: pick_first: get IDLE
+D1002 15:10:01.256311144   15144 connectivity_state.c:145]   SET: client_channel: IDLE --> IDLE [new_lb+resolver]
+D1002 15:10:01.256333182   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 3 -> 4 [watch_lb_policy]
+D1002 15:10:01.256371686   15144 connectivity_state.c:101]   CONWATCH: pick_first: from IDLE [cur=IDLE] notify=0x60600000eae8
+D1002 15:10:01.256395384   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 4 -> 5 [resolver]
+D1002 15:10:01.256417407   15144 connectivity_state.c:101]   CONWATCH: subchannel: from IDLE [cur=IDLE] notify=0x60f00000ef70
+D1002 15:10:01.256439625   15144 subchannel.c:408]           SUBCHANNEL: 0x61300000de80   ref 1 -> 2 connecting
+D1002 15:10:01.256454342   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 5 -> 6 [connecting]
+D1002 15:10:01.256473136   15144 connectivity_state.c:145]   SET: subchannel: IDLE --> CONNECTING [state_change]
+D1002 15:10:01.256634585   15144 tcp_client_posix.c:282]     CLIENT_CONNECT: ipv4:127.0.0.1:45144: asynchronously connecting
+D1002 15:10:01.256680540   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 6 -> 5 [resolver]
+D1002 15:10:01.256701503   15144 connectivity_state.c:145]   SET: pick_first: IDLE --> CONNECTING [connecting_changed]
+D1002 15:10:01.256722264   15144 connectivity_state.c:101]   CONWATCH: subchannel: from CONNECTING [cur=CONNECTING] notify=0x60f00000ef70
+D1002 15:10:01.256742995   15144 connectivity_state.c:145]   SET: client_channel: IDLE --> CONNECTING [lb_changed]
+D1002 15:10:01.256761389   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 5 -> 6 [watch_lb_policy]
+D1002 15:10:01.256779642   15144 connectivity_state.c:101]   CONWATCH: pick_first: from CONNECTING [cur=CONNECTING] notify=0x60600000e488
+D1002 15:10:01.256803655   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 6 -> 5 [watch_lb_policy]
+D1002 15:10:01.256951323   15144 client_microchannel.c:462]  MICRO CHANNEL CREATED WITH SUBCHANNEL 0x61300000de80
+I1002 15:10:01.256984466   15144 h2_full_microchannel.c:267] CHANNEL WRAPPING SUBCHANNEL: 0x61400000fa40(0x61300000de80)
+D1002 15:10:01.257072848   15144 channel.c:264]              CHANNEL:   ref 0x61400000fa40 1 -> 2 [call]
+I1002 15:10:01.257096541   15144 client_microchannel.c:399]  ZZZZZZZZZZ calld->state = CALL_WAITING_FOR_CALL
+D1002 15:10:01.257118150   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 2 -> 3 [alarm]
+D1002 15:10:01.257154709   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 3 -> 4 [completion]
+D1002 15:10:01.257189545   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 4 -> 5 [receiving]
+D1002 15:10:01.257227750   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 5 -> 6 [sending]
+D1002 15:10:01.257246921   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 6 -> 7 [loose-op]
+I1002 15:10:01.257261846   15144 call.c:1374]                REGISTERING ON_DONE_BIND, 0x61f00000f748
+I1002 15:10:01.257495013   15144 client_microchannel.c:274]  OP[client-microchannel:0x61f00000f860]: SEND_LAST:0x61f00000f728[METADATA{key=3a 61 75 74 68 6f 72 69 74 79 ':authority' value=66 6f 6f 2e 74 65 73 74 2e 67 6f 6f 67 6c 65 2e 66 72 'foo.test.google.fr', key=3a 70 61 74 68 ':path' value=2f 66 6f 6f '/foo', key=67 72 70 63 2d 65 6e 63 6f 64 69 6e 67 'grpc-encoding' value=69 64 65 6e 74 69 74 79 'identity', key=67 72 70 63 2d 61 63 63 65 70 74 2d 65 6e 63 6f 64 69 6e 67 'grpc-accept-encoding' value=64 65 66 6c 61 74 65 2c 67 7a 69 70 'deflate,gzip' deadline=143476.046520779}, BEGIN_MESSAGE:11, SLICE:11] RECV:0x61f00000f708:max_recv_bytes=65536 BIND ON_CONSUMED:0x61f00000f748
+I1002 15:10:01.257530865   15144 client_microchannel.c:341]  YYYYYYYYYY calld->state = CALL_WAITING_FOR_CALL
+I1002 15:10:01.257549633   15144 subchannel.c:351]           CREATE CALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL 0x61300000de80
+I1002 15:10:01.257564818   15144 subchannel.c:363]           CREATE CALL WAITING FOR CONNECT 0x61300000de80
+D1002 15:10:01.257579043   15144 subchannel.c:370]           SUBCHANNEL: 0x61300000de80   ref 2 -> 3 waiting_for_connect
+I1002 15:10:01.257845232   15144 call.c:1343]                CAAAAAAAAAAAAAAAAAANCELLINGGGGGGGGGG 0x61f00000ee80 4 Deadline Exceeded
+D1002 15:10:01.257868432   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 7 -> 8 [loose-op]
+I1002 15:10:01.257885239   15144 call.c:1380]                REGISTERING ALLOCATED, 0x61f00000f748
+I1002 15:10:01.257919396   15144 client_microchannel.c:274]  OP[client-microchannel:0x61f00000f860]: CANCEL:4 ON_CONSUMED:0x60400000d458
+I1002 15:10:01.257939531   15144 client_microchannel.c:301]  LMAAAAAAAAAAAAAAAAAAAO 0xbebebebebebebebe 0x61300000de80
+I1002 15:10:01.257952829   15144 client_microchannel.c:304]  WTFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF 0xbebebebebebebebe 0x61300000de80
+I1002 15:10:01.257971105   15144 client_microchannel.c:306]  AAAAAAAAAA calld->state = CALL_CANCELLED
+D1002 15:10:01.257997953   15144 call.c:495]                 CALL: unref 0x61f00000ee80 8 -> 7 [sending]
+D1002 15:10:01.258044933   15144 call.c:495]                 CALL: unref 0x61f00000ee80 7 -> 6 [closed]
+D1002 15:10:01.258078013   15144 call.c:447]                 CALL:   ref 0x61f00000ee80 6 -> 7 [completing]
+D1002 15:10:01.258105242   15144 call.c:495]                 CALL: unref 0x61f00000ee80 7 -> 6 [completing]
+D1002 15:10:01.258120857   15144 call.c:495]                 CALL: unref 0x61f00000ee80 6 -> 5 [receiving]
+I1002 15:10:01.258135136   15144 call.c:1349]                INVOKED LOOSE_OP over call 0x61f00000ee80
+D1002 15:10:01.258149080   15144 call.c:495]                 CALL: unref 0x61f00000ee80 5 -> 4 [loose-op]
+D1002 15:10:01.258172417   15144 call.c:495]                 CALL: unref 0x61f00000ee80 4 -> 3 [alarm]
+D1002 15:10:01.258208400   15144 tcp_server_posix.c:337]     SERVER_CONNECT: incoming connection: ipv4:127.0.0.1:50250
+D1002 15:10:01.258700677   15144 channel.c:264]              CHANNEL:   ref 0x61600000f080 1 -> 2 [connectivity]
+D1002 15:10:01.258722046   15144 connectivity_state.c:101]   CONWATCH: server_transport: from IDLE [cur=READY] notify=0x61600000f1e0
+D1002 15:10:01.258776673   15144 tcp_client_posix.c:125]     CLIENT_CONNECT: ipv4:127.0.0.1:45144: on_writable: success=1
+D1002 15:10:01.258822540   15144 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 06 04 00 00 00 00 00 00 04 00 00 ff ff '...............'
+D1002 15:10:01.258845292   15144 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 04 08 00 00 00 00 00 00 0f 00 01 '.............'
+D1002 15:10:01.258903827   15144 connectivity_state.c:101]   CONWATCH: server_transport: from READY [cur=READY] notify=0x61600000f1e0
+D1002 15:10:01.258926076   15144 tcp_client_posix.c:98]      CLIENT_CONNECT: ipv4:127.0.0.1:45144: on_alarm: success=0
+I1002 15:10:01.259221658   15144 subchannel.c:697]           SUBCHANNEL CONNECTED WIN. iomgr succ: 1
+D1002 15:10:01.259303517   15144 subchannel.c:599]           SUBCHANNEL: 0x61300000de80   ref 3 -> 4 state_watcher
+D1002 15:10:01.259325696   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 5 -> 4 [connecting]
+D1002 15:10:01.259341139   15144 subchannel.c:601]           SUBCHANNEL: 0x61300000de80 unref 4 -> 3 connecting
+D1002 15:10:01.259356314   15144 connectivity_state.c:101]   CONWATCH: client_transport: from READY [cur=READY] notify=0x60600000d0a0
+D1002 15:10:01.259393026   15144 connectivity_state.c:145]   SET: subchannel: CONNECTING --> READY [connected]
+D1002 15:10:01.259436033   15144 tcp_posix.c:397]            WRITE 0x61400000f640: 50 52 49 20 2a 20 48 54 54 50 2f 32 2e 30 0d 0a 0d 0a 53 4d 0d 0a 0d 0a 'PRI * HTTP/2.0....SM....'
+D1002 15:10:01.259458937   15144 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 12 04 00 00 00 00 00 00 02 00 00 00 00 00 03 00 00 00 00 00 04 00 00 ff ff '...........................'
+D1002 15:10:01.259474764   15144 tcp_posix.c:397]            WRITE 0x61400000f640: 00 00 04 08 00 00 00 00 00 00 0f 00 01 '.............'
+D1002 15:10:01.259513595   15144 connectivity_state.c:145]   SET: pick_first: CONNECTING --> READY [connecting_ready]
+D1002 15:10:01.259532060   15144 connectivity_state.c:101]   CONWATCH: subchannel: from READY [cur=READY] notify=0x60f00000ef70
+I1002 15:10:01.259548827   15144 subchannel.c:351]           CREATE CALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL 0x61300000de80
+I1002 15:10:01.259565133   15144 subchannel.c:354]           CREATE CALL ACTIVE 0x61300000de80
+D1002 15:10:01.259581650   15144 subchannel.c:356]           CONNECTION: 0x60c000009f40   ref 0 -> 1 call
+D1002 15:10:01.259597347   15144 subchannel.c:356]           SUBCHANNEL: 0x61300000de80   ref 3 -> 4 call
+I1002 15:10:01.259663774   15144 http_client_filter.c:165]   OP[http-client:0x61b00001f1a0]: CANCEL:1
+I1002 15:10:01.259698007   15144 connected_channel.c:70]     OP[connected:0x61b00001f1b8]: CANCEL:1
+D1002 15:10:01.259729844   15144 subchannel.c:342]           SUBCHANNEL: 0x61300000de80 unref 4 -> 3 waiting_for_connect
+D1002 15:10:01.259767008   15144 connectivity_state.c:145]   SET: client_channel: CONNECTING --> READY [lb_changed]
+D1002 15:10:01.259787325   15144 channel.c:264]              CHANNEL:   ref 0x61500000fd00 4 -> 5 [watch_lb_policy]
+D1002 15:10:01.259803756   15144 connectivity_state.c:101]   CONWATCH: pick_first: from READY [cur=READY] notify=0x60600000c568
+D1002 15:10:01.259826317   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 5 -> 4 [watch_lb_policy]
+D1002 15:10:01.259845407   15144 call.c:495]                 CALL: unref 0x61f00000ee80 3 -> 2 [completion]
+D1002 15:10:01.259876182   15144 call.c:495]                 CALL: unref 0x61f00000ee80 2 -> 1 [destroy]
+D1002 15:10:01.259898194   15144 request_with_flags.c:78]    SHUTTING DOWN SERVER
+D1002 15:10:01.259924063   15144 channel.c:264]              CHANNEL:   ref 0x61600000f080 2 -> 3 [broadcast]
+D1002 15:10:01.259972828   15144 connectivity_state.c:145]   SET: server_transport: READY --> FATAL_FAILURE [close_transport]
+D1002 15:10:01.259993755   15144 channel.c:305]              CHANNEL: unref 0x61600000f080 3 -> 2 [broadcast]
+D1002 15:10:01.260050714   15144 tcp_posix.c:397]            WRITE 0x61400000f840: 00 00 17 07 00 00 00 00 00 00 00 00 00 00 00 00 00 '.................'
+D1002 15:10:01.260074728   15144 tcp_posix.c:397]            WRITE 0x61400000f840: 53 65 72 76 65 72 20 73 68 75 74 64 6f 77 6e 'Server shutdown'
+D1002 15:10:01.260107870   15144 channel.c:305]              CHANNEL: unref 0x61600000f080 2 -> 1 [connectivity]
+D1002 15:10:01.260134933   15144 server.c:398]               finish_destroy_channel: 0x61600000f080
+D1002 15:10:01.260153041   15144 channel.c:305]              CHANNEL: unref 0x61600000f080 1 -> 0 [server]
+D1002 15:10:01.260197512   15144 tcp_posix.c:159]            read: success=0
+D1002 15:10:01.268514667   15144 request_with_flags.c:88]    SHUTTING DOWN CLIENT
+D1002 15:10:01.268537731   15144 connectivity_state.c:145]   SET: client_microchannel: IDLE --> FATAL_FAILURE [disconnect]
+D1002 15:10:01.268552088   15144 channel.c:305]              CHANNEL: unref 0x61400000fa40 2 -> 1 [channel]
+D1002 15:10:01.268579288   15144 connectivity_state.c:145]   SET: client_channel: READY --> FATAL_FAILURE [disconnect]
+D1002 15:10:01.268596773   15144 connectivity_state.c:145]   SET: pick_first: READY --> FATAL_FAILURE [shutdown]
+D1002 15:10:01.268620023   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 4 -> 3 [subchannel_factory]
+D1002 15:10:01.268653137   15144 pick_first.c:288]           SUBCHANNEL: 0x61300000de80   ref 3 -> 4 pf_broadcast
+D1002 15:10:01.268670783   15144 subchannel.c:440]           CONNECTION: 0x60c000009f40   ref 1 -> 2 transport-op
+D1002 15:10:01.268686540   15144 subchannel.c:440]           SUBCHANNEL: 0x61300000de80   ref 4 -> 5 transport-op
+D1002 15:10:01.268701055   15144 connectivity_state.c:145]   SET: subchannel: READY --> FATAL_FAILURE [disconnect]
+D1002 15:10:01.268720973   15144 connectivity_state.c:145]   SET: client_transport: READY --> FATAL_FAILURE [close_transport]
+D1002 15:10:01.268742356   15144 subchannel.c:458]           CONNECTION: 0x60c000009f40 unref 2 -> 1 transport-op
+D1002 15:10:01.268759754   15144 subchannel.c:458]           SUBCHANNEL: 0x61300000de80 unref 5 -> 4 transport-op
+D1002 15:10:01.268776512   15144 pick_first.c:294]           SUBCHANNEL: 0x61300000de80 unref 4 -> 3 pf_broadcast
+D1002 15:10:01.268791743   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 3 -> 2 [channel]
+D1002 15:10:01.268808018   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 2 -> 1 [watch_lb_policy]
+D1002 15:10:01.268824333   15144 connectivity_state.c:145]   SET: client_channel: FATAL_FAILURE --> FATAL_FAILURE [resolver_gone]
+D1002 15:10:01.268839146   15144 channel.c:305]              CHANNEL: unref 0x61500000fd00 1 -> 0 [resolver]
+D1002 15:10:01.268869462   15144 pick_first.c:102]           SUBCHANNEL: 0x61300000de80 unref 3 -> 2 pick_first
+D1002 15:10:01.268888705   15144 connectivity_state.c:145]   SET: subchannel: FATAL_FAILURE --> FATAL_FAILURE [connection_failed]
+D1002 15:10:01.268904892   15144 connectivity_state.c:145]   SET: subchannel: FATAL_FAILURE --> FATAL_FAILURE [transport_state_changed]
+D1002 15:10:01.268919416   15144 subchannel.c:523]           SUBCHANNEL: 0x61300000de80 unref 2 -> 1 state_watcher
+D1002 15:10:01.268934672   15144 tcp_posix.c:159]            read: success=0
+
+=================================================================
+==15144==ERROR: LeakSanitizer: detected memory leaks
+
+Indirect leak of 10192 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4e448b in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1243
+    #3 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #4 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #5 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #6 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #7 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #8 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 5856 byte(s) in 61 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x586f87 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:496
+    #4 0x55db07 in grpc_chttp2_hptbl_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_table.c:179
+    #5 0x548483 in grpc_chttp2_hpack_parser_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_parser.c:1360
+    #6 0x4e58e7 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:262
+    #7 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #8 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #9 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #10 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #11 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #12 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #13 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #14 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #15 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #16 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 3264 byte(s) in 34 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f11 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:497
+    #5 0x55db07 in grpc_chttp2_hptbl_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_table.c:179
+    #6 0x548483 in grpc_chttp2_hpack_parser_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_parser.c:1360
+    #7 0x4e58e7 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:262
+    #8 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #9 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 3128 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4a2a87 in grpc_call_create /home/dgq/grpc/forks/grpc/src/core/surface/call.c:309
+    #3 0x4d8360 in grpc_channel_create_call_internal /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:206
+    #4 0x4d7937 in grpc_channel_create_call /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:217
+    #5 0x48d101 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:127
+    #6 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #7 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #8 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 1835 byte(s) in 16 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f11 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:497
+    #5 0x55db07 in grpc_chttp2_hptbl_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_table.c:179
+    #6 0x548483 in grpc_chttp2_hpack_parser_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_parser.c:1360
+    #7 0x4e58e7 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:262
+    #8 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #9 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 1520 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x637bd9 in create_call /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:790
+    #3 0x6367d4 in grpc_subchannel_create_call /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:359
+    #4 0x63834e in continue_creating_call /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:340
+    #5 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #6 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #7 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #8 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #9 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #10 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #11 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #12 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 1440 byte(s) in 15 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f75 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:498
+    #5 0x55db07 in grpc_chttp2_hptbl_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_table.c:179
+    #6 0x548483 in grpc_chttp2_hpack_parser_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_parser.c:1360
+    #7 0x4e58e7 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:262
+    #8 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #9 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 512 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58447f in grow_strtab /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:245
+    #3 0x583424 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:375
+    #4 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #5 0x586f11 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:497
+    #6 0x55db07 in grpc_chttp2_hptbl_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_table.c:179
+    #7 0x548483 in grpc_chttp2_hpack_parser_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_parser.c:1360
+    #8 0x4e58e7 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:262
+    #9 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #10 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #11 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #12 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #13 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #14 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #15 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #16 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #17 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #18 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 512 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58cf19 in grow_mdtab /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:415
+    #3 0x586cb2 in rehash_mdtab /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:438
+    #4 0x5862bb in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:486
+    #5 0x586f87 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:496
+    #6 0x55db07 in grpc_chttp2_hptbl_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_table.c:179
+    #7 0x548483 in grpc_chttp2_hpack_parser_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/hpack_parser.c:1360
+    #8 0x4e58e7 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:262
+    #9 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #10 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #11 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #12 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #13 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #14 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #15 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #16 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #17 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #18 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 424 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4d4bd1 in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:99
+    #3 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #4 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #5 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #6 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #7 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #8 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #9 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 352 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x634776 in grpc_subchannel_create /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:288
+    #3 0x489eff in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:171
+    #4 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #5 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #6 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #7 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #8 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #9 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #10 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #11 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #12 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #13 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #14 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #15 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 320 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x51b1ca in grpc_completion_queue_create /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:77
+    #3 0x487a65 in chttp2_create_fixture_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:244
+    #4 0x48ea5a in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:57
+    #5 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #6 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #7 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #8 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 288 byte(s) in 3 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x5252ac in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:351
+    #4 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #5 0x4d6d5a in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:179
+    #6 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #7 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #8 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #9 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #10 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #11 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #12 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 288 byte(s) in 3 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x525294 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:354
+    #5 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #6 0x4d6d5a in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:179
+    #7 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #8 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #9 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #10 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 288 byte(s) in 3 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d5436 in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:118
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 288 byte(s) in 3 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x4d544e in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:116
+    #4 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #5 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #6 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #7 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #8 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #9 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #10 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 256 byte(s) in 1 object(s) allocated from:
+    #0 0x4703b3 in realloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4703b3)
+    #1 0x6c54e1 in gpr_realloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:50
+    #2 0x56f771 in grpc_chttp2_incoming_metadata_buffer_add /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/incoming_metadata.c:62
+    #3 0x4fa9a6 in unlock_check_read_write_state /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:887
+    #4 0x4e2344 in unlock /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:513
+    #5 0x4e16c7 in grpc_chttp2_terminate_writing /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:567
+    #6 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #7 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #8 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #9 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #10 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 128 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x63e00b in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:556
+    #3 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #4 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #5 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #6 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #7 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #8 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #9 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #10 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #11 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #12 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 128 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4898de in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:159
+    #3 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #4 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #5 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #6 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #7 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #8 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #9 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #10 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #11 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #12 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #13 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #14 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 127 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x524d49 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:334
+    #5 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #6 0x4d6d5a in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:179
+    #7 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #8 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #9 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #10 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 120 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x564f0d in user_agent_from_args /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:242
+    #5 0x56310b in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:271
+    #6 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #7 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #8 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #9 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 117 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d515c in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:111
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 114 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4b102c in cancel_with_status /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1333
+    #5 0x4b86b7 in call_alarm /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1407
+    #6 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #7 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #8 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #9 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #10 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 113 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f75 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:498
+    #5 0x562f2f in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:267
+    #6 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #7 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #8 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #9 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 112 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x58293f in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:355
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f75 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:498
+    #5 0x4d6b2b in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:173
+    #6 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #7 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #8 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #9 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #10 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #11 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #12 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 104 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x580203 in grpc_mdctx_create_with_seed /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:167
+    #3 0x580a6b in grpc_mdctx_create /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:189
+    #4 0x4866b3 in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:192
+    #5 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #6 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #7 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #8 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #9 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #10 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d5648 in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:121
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x586f87 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:496
+    #4 0x4d6b2b in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:173
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x525651 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:368
+    #5 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #6 0x4d6d5a in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:179
+    #7 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #8 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #9 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #10 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x525663 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:366
+    #4 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #5 0x4d6d5a in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:179
+    #6 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #7 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #8 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #9 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #10 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #11 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #12 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f75 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:498
+    #5 0x516955 in handle_op_after_cancellation /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:125
+    #6 0x515588 in perform_transport_stream_op /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:318
+    #7 0x50dbcb in cmc_start_transport_stream_op /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:357
+    #8 0x4df7a7 in grpc_call_next_op /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:195
+    #9 0x5239a9 in compress_start_transport_stream_op /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:279
+    #10 0x4ca0aa in execute_op /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1387
+    #11 0x4aaf6b in unlock /home/dgq/grpc/forks/grpc/src/core/surface/call.c:665
+    #12 0x4b8747 in call_alarm /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1411
+    #13 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #14 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #15 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #16 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #17 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #18 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #19 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #20 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4e540e in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:246
+    #5 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #6 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #7 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #8 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #9 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #10 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #11 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #12 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #13 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #14 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f11 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:497
+    #5 0x562cd8 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:262
+    #6 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #7 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #8 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #9 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x586f75 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:498
+    #5 0x562cd8 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:262
+    #6 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #7 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #8 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #9 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #10 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #11 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #12 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #13 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #14 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d4fea in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:107
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d50a3 in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:109
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x586f87 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:496
+    #4 0x562cd8 in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:262
+    #5 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #6 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #7 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #8 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #9 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #10 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #11 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #12 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #13 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #14 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #15 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #16 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d5215 in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:112
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x586f87 in grpc_mdelem_from_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:496
+    #4 0x562f2f in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:267
+    #5 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #6 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #7 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #8 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #9 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #10 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #11 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #12 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #13 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #14 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #15 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #16 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x582492 in grpc_mdstr_from_buffer /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:346
+    #3 0x581786 in grpc_mdstr_from_string /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:316
+    #4 0x4d558f in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:120
+    #5 0x4869ff in channel_create /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:199
+    #6 0x48801a in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:255
+    #7 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #8 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #9 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #10 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #11 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x585b89 in grpc_mdelem_from_metadata_strings /home/dgq/grpc/forks/grpc/src/core/transport/metadata.c:467
+    #3 0x56311d in init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/http_client_filter.c:269
+    #4 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #5 0x63e36d in publish_transport /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:560
+    #6 0x635ceb in subchannel_connected /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:698
+    #7 0x48bf1c in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:105
+    #8 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #9 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #10 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #11 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #12 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #13 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #14 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #15 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 64 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6229f1 in grpc_chttp2_stream_map_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/stream_map.c:46
+    #3 0x4e5af4 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:279
+    #4 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #5 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #6 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #7 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #8 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #9 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #10 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 64 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6229f1 in grpc_chttp2_stream_map_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/stream_map.c:46
+    #3 0x4e5b3e in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:280
+    #4 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #5 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #6 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #7 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #8 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #9 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #10 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 40 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4c9d01 in execute_op /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1377
+    #3 0x4aaf6b in unlock /home/dgq/grpc/forks/grpc/src/core/surface/call.c:665
+    #4 0x4b8747 in call_alarm /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1411
+    #5 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #6 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #7 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #8 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #9 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #10 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #11 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #12 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 32 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x622960 in grpc_chttp2_stream_map_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/stream_map.c:45
+    #3 0x4e5af4 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:279
+    #4 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #5 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #6 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #7 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #8 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #9 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #10 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 32 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x622960 in grpc_chttp2_stream_map_init /home/dgq/grpc/forks/grpc/src/core/transport/chttp2/stream_map.c:45
+    #3 0x4e5b3e in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:280
+    #4 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #5 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #6 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #7 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #8 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #9 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #10 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 21 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6dd09f in gpr_strdup /home/dgq/grpc/forks/grpc/src/core/support/string.c:54
+    #3 0x65222f in tcp_get_peer /home/dgq/grpc/forks/grpc/src/core/iomgr/tcp_posix.c:440
+    #4 0x52edd7 in grpc_endpoint_get_peer /home/dgq/grpc/forks/grpc/src/core/iomgr/endpoint.c:66
+    #5 0x4e4dba in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:234
+    #6 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #7 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #8 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #9 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #10 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #11 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #12 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #13 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #14 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #15 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 20 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6dd09f in gpr_strdup /home/dgq/grpc/forks/grpc/src/core/support/string.c:54
+    #3 0x52a18b in grpc_connectivity_state_init /home/dgq/grpc/forks/grpc/src/core/transport/connectivity_state.c:66
+    #4 0x5104ed in cmc_init_channel_elem /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:465
+    #5 0x4dd71b in grpc_channel_stack_init /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:127
+    #6 0x4d6d5a in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:179
+    #7 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #8 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #9 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #10 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #11 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #12 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #13 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 17 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6dd09f in gpr_strdup /home/dgq/grpc/forks/grpc/src/core/support/string.c:54
+    #3 0x52a18b in grpc_connectivity_state_init /home/dgq/grpc/forks/grpc/src/core/transport/connectivity_state.c:66
+    #4 0x4e5678 in init_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:250
+    #5 0x4e4607 in grpc_create_chttp2_transport /home/dgq/grpc/forks/grpc/src/core/transport/chttp2_transport.c:1244
+    #6 0x48b7fb in connected /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:92
+    #7 0x5300d9 in grpc_exec_ctx_flush /home/dgq/grpc/forks/grpc/src/core/iomgr/exec_ctx.c:44
+    #8 0x5b1e55 in grpc_pollset_work /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:222
+    #9 0x51eba1 in grpc_completion_queue_next /home/dgq/grpc/forks/grpc/src/core/surface/completion_queue.c:219
+    #10 0x491b49 in cq_verify /home/dgq/grpc/forks/grpc/test/core/end2end/cq_verifier.c:229
+    #11 0x48e370 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:170
+    #12 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #13 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #14 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 16 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6aeb13 in epoll_become_multipoller /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_multipoller_with_epoll.c:246
+    #3 0x5b5892 in basic_pollset_add_fd /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:391
+    #4 0x5b0afd in grpc_pollset_add_fd /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_posix.c:149
+    #5 0x5b9f81 in grpc_pollset_set_add_pollset /home/dgq/grpc/forks/grpc/src/core/iomgr/pollset_set_posix.c:78
+    #6 0x63423d in grpc_subchannel_add_interested_party /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:273
+    #7 0x636e2d in grpc_subchannel_create_call /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:373
+    #8 0x515ef5 in perform_transport_stream_op /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:345
+    #9 0x50dbcb in cmc_start_transport_stream_op /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:357
+    #10 0x4df7a7 in grpc_call_next_op /home/dgq/grpc/forks/grpc/src/core/channel/channel_stack.c:195
+    #11 0x5239a9 in compress_start_transport_stream_op /home/dgq/grpc/forks/grpc/src/core/channel/compress_filter.c:279
+    #12 0x4ca0aa in execute_op /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1387
+    #13 0x4aaf6b in unlock /home/dgq/grpc/forks/grpc/src/core/surface/call.c:665
+    #14 0x4ad66a in grpc_call_start_ioreq_and_call_back /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1274
+    #15 0x4b6317 in grpc_call_start_batch /home/dgq/grpc/forks/grpc/src/core/surface/call.c:1817
+    #16 0x48e128 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:165
+    #17 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #18 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #19 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 16 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x634faf in grpc_subchannel_create /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:299
+    #3 0x489eff in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:171
+    #4 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #5 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #6 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #7 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #8 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #9 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #10 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #11 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #12 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #13 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #14 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #15 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 16 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4cb8ac in grpc_channel_args_copy_and_add /home/dgq/grpc/forks/grpc/src/core/channel/channel_args.c:68
+    #3 0x4cd365 in grpc_channel_args_copy /home/dgq/grpc/forks/grpc/src/core/channel/channel_args.c:88
+    #4 0x6353f8 in grpc_subchannel_create /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:302
+    #5 0x489eff in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:171
+    #6 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #7 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #8 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #9 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #10 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #11 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #12 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #13 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #14 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 16 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6dd09f in gpr_strdup /home/dgq/grpc/forks/grpc/src/core/support/string.c:54
+    #3 0x4d4d39 in grpc_channel_create_from_filters /home/dgq/grpc/forks/grpc/src/core/surface/channel.c:101
+    #4 0x513335 in grpc_client_microchannel_create /home/dgq/grpc/forks/grpc/src/core/channel/client_microchannel.c:575
+    #5 0x48842d in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:266
+    #6 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #7 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #8 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #9 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #10 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 11 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x6dd09f in gpr_strdup /home/dgq/grpc/forks/grpc/src/core/support/string.c:54
+    #3 0x52a18b in grpc_connectivity_state_init /home/dgq/grpc/forks/grpc/src/core/transport/connectivity_state.c:66
+    #4 0x6357b4 in grpc_subchannel_create /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:309
+    #5 0x489eff in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:171
+    #6 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #7 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #8 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #9 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #10 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #11 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #12 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #13 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #14 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 1 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x634c05 in grpc_subchannel_create /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:296
+    #3 0x489eff in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:171
+    #4 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #5 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #6 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #7 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #8 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #9 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #10 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #11 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #12 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #13 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #14 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #15 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+Indirect leak of 1 byte(s) in 1 object(s) allocated from:
+    #0 0x4701b9 in __interceptor_malloc (/home/dgq/grpc/forks/grpc/bins/asan/h2_full_microchannel_request_with_flags_test+0x4701b9)
+    #1 0x6c50d8 in gpr_malloc /home/dgq/grpc/forks/grpc/src/core/support/alloc.c:40
+    #2 0x4cbc9e in grpc_channel_args_copy_and_add /home/dgq/grpc/forks/grpc/src/core/channel/channel_args.c:77
+    #3 0x4cd365 in grpc_channel_args_copy /home/dgq/grpc/forks/grpc/src/core/channel/channel_args.c:88
+    #4 0x6353f8 in grpc_subchannel_create /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel.c:302
+    #5 0x489eff in subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:171
+    #6 0x6323e7 in grpc_subchannel_factory_create_subchannel /home/dgq/grpc/forks/grpc/src/core/client_config/subchannel_factory.c:48
+    #7 0x5feb29 in sockaddr_maybe_finish_next_locked /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:141
+    #8 0x5fe15c in sockaddr_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolvers/sockaddr_resolver.c:121
+    #9 0x5c03d7 in grpc_resolver_next /home/dgq/grpc/forks/grpc/src/core/client_config/resolver.c:84
+    #10 0x501622 in grpc_client_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/channel/client_channel.c:741
+    #11 0x4d0e39 in grpc_channel_check_connectivity_state /home/dgq/grpc/forks/grpc/src/core/surface/channel_connectivity.c:52
+    #12 0x488150 in chttp2_init_client_micro_fullstack /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:258
+    #13 0x48ed1b in begin_test /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:59
+    #14 0x48cf24 in test_invoke_request_with_flags /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:112
+    #15 0x48c586 in grpc_end2end_tests /home/dgq/grpc/forks/grpc/test/core/end2end/tests/request_with_flags.c:215
+    #16 0x4874e2 in main /home/dgq/grpc/forks/grpc/test/core/end2end/fixtures/h2_full_microchannel.c:307
+    #17 0x7efc263e0ec4 (/lib/x86_64-linux-gnu/libc.so.6+0x21ec4)
+
+SUMMARY: AddressSanitizer: 33633 byte(s) leaked in 186 allocation(s).

@@ -74,6 +74,8 @@ typedef struct {
   /* XXX */
   grpc_closure foo_cb;
   grpc_connectivity_state bla;
+
+  gpr_mu mu_state;
 } channel_data;
 
 typedef enum {
@@ -170,7 +172,7 @@ static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_transport_stream_op op;
   int have_waiting;
 
-
+  gpr_log(GPR_INFO, "STARTED CALL");
   gpr_mu_lock(&calld->mu_state);
   if (calld->state == CALL_CANCELLED && iomgr_success == 0) {
     have_waiting = !is_empty(&calld->waiting_op, sizeof(calld->waiting_op));
@@ -186,6 +188,7 @@ static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
   } else if (calld->state == CALL_WAITING_FOR_CALL) {
     have_waiting = !is_empty(&calld->waiting_op, sizeof(calld->waiting_op));
     if (calld->subchannel_call != NULL) {
+      gpr_log(GPR_INFO, "XXXXXXXXXX calld->state = CALL_ACTIVE");
       calld->state = CALL_ACTIVE;
       gpr_mu_unlock(&calld->mu_state);
       if (have_waiting) {
@@ -193,6 +196,7 @@ static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
                                         &calld->waiting_op);
       }
     } else {
+      gpr_log(GPR_INFO, "XXXXXXXXXX calld->state = CALL_CANCELLED");
       calld->state = CALL_CANCELLED;
       gpr_mu_unlock(&calld->mu_state);
       if (have_waiting) {
@@ -294,9 +298,12 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
       continuation = 1;
     /* fall through */
     case CALL_WAITING_FOR_CALL:
+      gpr_log(GPR_INFO, "LMAAAAAAAAAAAAAAAAAAAO %p %p", calld->subchannel_call, chand->subchannel);
       if (!continuation) {
         if (op->cancel_with_status != GRPC_STATUS_OK) {
+          gpr_log(GPR_INFO, "WTFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF %p %p", calld->subchannel_call, chand->subchannel);
           calld->state = CALL_CANCELLED;
+          gpr_log(GPR_INFO, "AAAAAAAAAA calld->state = CALL_CANCELLED");
           op2 = calld->waiting_op;
           memset(&calld->waiting_op, 0, sizeof(calld->waiting_op));
           if (op->on_consumed) {
@@ -318,17 +325,20 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
     /* fall through */
     case CALL_CREATED:
       if (op->cancel_with_status != GRPC_STATUS_OK) {
+        gpr_log(GPR_INFO, "YYYYYYYYYY calld->state = CALL_CANCELLED");
         calld->state = CALL_CANCELLED;
         gpr_mu_unlock(&calld->mu_state);
         handle_op_after_cancellation(exec_ctx, elem, op);
       } else {
         calld->waiting_op = *op;
         if (op->send_ops == NULL) {
+          gpr_log(GPR_INFO, "YYYYYYYYYY calld->state = CALL_WAITING_FOR_SEND");
           calld->state = CALL_WAITING_FOR_SEND;
           gpr_mu_unlock(&calld->mu_state);
         } else {
           /* Create subchannel call */
           grpc_pollset *pollset = calld->waiting_op.bind_pollset;
+          gpr_log(GPR_INFO, "YYYYYYYYYY calld->state = CALL_WAITING_FOR_CALL");
           calld->state = CALL_WAITING_FOR_CALL;
           gpr_mu_unlock(&calld->mu_state);
           grpc_closure_init(&calld->async_setup_task, started_call, calld);
@@ -386,6 +396,7 @@ static void cmc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   gpr_mu_init(&calld->mu_state);
   calld->elem = elem;
   calld->state = CALL_CREATED;
+  gpr_log(GPR_INFO, "ZZZZZZZZZZ calld->state = CALL_WAITING_FOR_CALL");
   calld->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
@@ -453,6 +464,8 @@ static void cmc_init_channel_elem(grpc_exec_ctx *exec_ctx,
 
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_microchannel");
+
+  gpr_mu_init(&chand->mu_state);
 }
 
 /* Destructor for channel_data */
@@ -461,6 +474,7 @@ static void cmc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   grpc_subchannel_state_change_unsubscribe(exec_ctx, chand->subchannel, &chand->foo_cb);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
+  gpr_mu_lock(&chand->mu_state);
   /*GRPC_SUBCHANNEL_UNREF(exec_ctx, chand->subchannel, "cmc_destroy_channel_elem");
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, chand->master, "cmc_destroy_channel_elem");*/
 }
@@ -483,7 +497,7 @@ grpc_connectivity_state grpc_client_microchannel_check_connectivity_state(
   channel_data *chand = elem->channel_data;
   grpc_connectivity_state out;
   out = grpc_connectivity_state_check(&chand->state_tracker);
-  /*gpr_mu_lock(&chand->mu_config); */
+  gpr_mu_lock(&chand->mu_state);
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, GRPC_CHANNEL_CONNECTING,
                                 "microchannel_connecting_changed");
@@ -491,7 +505,7 @@ grpc_connectivity_state grpc_client_microchannel_check_connectivity_state(
     grpc_subchannel_notify_on_state_change(exec_ctx, chand->subchannel,
                                            &chand->bla, &chand->foo_cb);
   }
-  /*gpr_mu_unlock(&chand->mu_config);*/
+  gpr_mu_unlock(&chand->mu_state);
   return out;
 }
 
@@ -499,10 +513,10 @@ void grpc_client_microchannel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
     grpc_connectivity_state *state, grpc_closure *on_complete) {
   channel_data *chand = elem->channel_data;
-  /*gpr_mu_lock(&chand->mu_config);*/
+  gpr_mu_lock(&chand->mu_state);
   grpc_connectivity_state_notify_on_state_change(
       exec_ctx, &chand->state_tracker, state, on_complete);
-  /*gpr_mu_unlock(&chand->mu_config);*/
+  gpr_mu_unlock(&chand->mu_state);
 }
 
 grpc_pollset_set *grpc_client_microchannel_get_connecting_pollset_set(
