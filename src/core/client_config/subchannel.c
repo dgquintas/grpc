@@ -386,6 +386,32 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
   }
 }
 
+void grpc_subchannel_cancel_waiting_call(grpc_exec_ctx *exec_ctx,
+                                         grpc_subchannel *subchannel,
+                                         int success) {
+  /* XXX go over all the w4c's and call their notifys and removing the w4c
+   * instances, just like continue_creating does */
+  waiting_for_connect *w4c;
+  gpr_mu_lock(&subchannel->mu);
+  w4c = subchannel->waiting;
+  subchannel->waiting = NULL;
+  gpr_mu_unlock(&subchannel->mu);
+  while (w4c != NULL) {
+    /* from continue_creating_call */
+    waiting_for_connect *next = w4c->next;
+    grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel,
+                                         w4c->pollset);
+    if (w4c->notify) {
+      w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, success);
+    }
+
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
+    gpr_free(w4c);
+
+    w4c = next;
+  }
+}
+
 grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c) {
   grpc_connectivity_state state;
   gpr_mu_lock(&c->mu);

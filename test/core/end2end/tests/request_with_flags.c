@@ -191,9 +191,9 @@ void grpc_end2end_tests(grpc_end2end_test_config config) {
   size_t i;
   gpr_uint32 flags_for_op[GRPC_OP_RECV_CLOSE_ON_SERVER + 1];
 
-  /*{
-    [> check that all grpc_op_types fail when their flag value is set to an
-     * invalid value <]
+  {
+    /* check that all grpc_op_types fail when their flag value is set to an
+     * invalid value */
     int indices[] = {GRPC_OP_SEND_INITIAL_METADATA, GRPC_OP_SEND_MESSAGE,
                      GRPC_OP_SEND_CLOSE_FROM_CLIENT,
                      GRPC_OP_RECV_INITIAL_METADATA,
@@ -204,12 +204,12 @@ void grpc_end2end_tests(grpc_end2end_test_config config) {
       test_invoke_request_with_flags(config, flags_for_op,
                                      GRPC_CALL_ERROR_INVALID_FLAGS);
     }
-  }*/
+  }
   {
     /* check valid operation with allowed flags for GRPC_OP_SEND_BUFFER */
     gpr_uint32 flags[] = {GRPC_WRITE_BUFFER_HINT, GRPC_WRITE_NO_COMPRESS,
                           GRPC_WRITE_INTERNAL_COMPRESS};
-    for (i = 0; i < GPR_ARRAY_SIZE(flags)-2; ++i) {
+    for (i = 0; i < GPR_ARRAY_SIZE(flags); ++i) {
       memset(flags_for_op, 0, sizeof(flags_for_op));
       flags_for_op[GRPC_OP_SEND_MESSAGE] = flags[i];
       test_invoke_request_with_flags(config, flags_for_op, GRPC_CALL_OK);

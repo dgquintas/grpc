@@ -181,6 +181,7 @@ static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
       handle_op_after_cancellation(exec_ctx, calld->elem, &calld->waiting_op);
     }
   } else if (calld->state == CALL_CANCELLED && calld->subchannel_call != NULL) {
+    gpr_log(GPR_INFO, "LOL WUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUT %p", calld->subchannel_call);
     memset(&op, 0, sizeof(op));
     op.cancel_with_status = GRPC_STATUS_CANCELLED;
     gpr_mu_unlock(&calld->mu_state);
@@ -316,6 +317,8 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
           gpr_mu_unlock(&calld->mu_state);
           handle_op_after_cancellation(exec_ctx, elem, op);
           handle_op_after_cancellation(exec_ctx, elem, &op2);
+          /* XXX invoke subchannel cancellation function */
+          grpc_subchannel_cancel_waiting_call(exec_ctx, chand->subchannel, 1);
         } else {
           grpc_exec_ctx_enqueue(exec_ctx, merge_into_waiting_op(elem, op), 1);
           gpr_mu_unlock(&calld->mu_state);
@@ -387,6 +390,7 @@ static void cmc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   call_data *calld = elem->call_data;
+  memset(calld, 0, sizeof(call_data));
 
   /* TODO(ctiller): is there something useful we can do here? */
   GPR_ASSERT(initial_op == NULL);
