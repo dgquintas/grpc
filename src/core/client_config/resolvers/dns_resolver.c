@@ -151,6 +151,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = addresses->naddrs;
+    lb_policy_args.subchannel_factory = r->subchannel_factory;
     lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(config, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");

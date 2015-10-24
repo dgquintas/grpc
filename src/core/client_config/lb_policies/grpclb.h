@@ -31,45 +31,43 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_GRPCLB_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_GRPCLB_H
 
-#include "src/core/client_config/lb_policy.h"
-#include "src/core/client_config/subchannel.h"
-#include "src/core/client_config/subchannel_factory.h"
+#include <grpc/support/slice_buffer.h>
 
-typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
-typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
+#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/client_config/lb_policies/load_balancer.pb.h"
 
-/** grpc_lb_policy provides grpc_client_config objects to grpc_channel
-    objects */
-struct grpc_lb_policy_factory {
-  const grpc_lb_policy_factory_vtable *vtable;
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef struct grpc_lb_policy_args {
-  grpc_subchannel **subchannels;
-  size_t num_subchannels;
-  grpc_subchannel_factory *subchannel_factory;
-} grpc_lb_policy_args;
+/** Returns a load balancing factory for the pick first policy, which picks up
+ * the first subchannel from \a subchannels to succesfully connect */
+grpc_lb_policy_factory *grpc_grpclb_lb_factory_create();
 
-struct grpc_lb_policy_factory_vtable {
-  void (*ref)(grpc_lb_policy_factory *factory);
-  void (*unref)(grpc_lb_policy_factory *factory);
+typedef grpc_lb_v0_LoadBalanceRequest grpc_grpclb_request;
+typedef grpc_lb_v0_LoadBalanceResponse grpc_grpclb_response;
+typedef grpc_lb_v0_Server grpc_grpclb_server;
+typedef grpc_lb_v0_Duration grpc_grpclb_duration;
+typedef struct grpc_grpclb_serverlist {
+  grpc_grpclb_server **servers;
+  size_t num_servers;
+  grpc_grpclb_duration expiration_interval;
+} grpc_grpclb_serverlist;
 
-  /** Implementation of grpc_lb_policy_factory_create_lb_policy */
-  grpc_lb_policy *(*create_lb_policy)(grpc_lb_policy_factory *factory,
-                                      grpc_lb_policy_args *args);
+grpc_grpclb_request *grpc_grpclb_request_create(const char* lb_service_name);
+gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request);
+void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
 
-  /** Name for the LB policy this factory implements */
-  const char *name;
-};
+grpc_grpclb_response *grpc_grpclb_response_parse(const char* encoded_response);
+grpc_grpclb_serverlist grpc_grpclb_response_parse_serverlist(
+    const char* encoded_response);
+void grpc_grpclb_response_destroy(grpc_grpclb_response *response);
 
-void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory);
-void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
+#ifdef __cplusplus
+}
+#endif
 
-/** Create a lb_policy instance. */
-grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args);
-
-#endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_FACTORY_H */
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_GRPCLB_H */
