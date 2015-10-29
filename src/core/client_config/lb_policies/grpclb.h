@@ -61,9 +61,9 @@ grpc_grpclb_request *grpc_grpclb_request_create(const char* lb_service_name);
 gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request);
 void grpc_grpclb_request_destroy(grpc_grpclb_request *request);
 
-grpc_grpclb_response *grpc_grpclb_response_parse(const char* encoded_response);
+grpc_grpclb_response *grpc_grpclb_response_parse(gpr_slice encoded_response);
 grpc_grpclb_serverlist grpc_grpclb_response_parse_serverlist(
-    const char* encoded_response);
+    gpr_slice encoded_response);
 void grpc_grpclb_response_destroy(grpc_grpclb_response *response);
 
 #ifdef __cplusplus

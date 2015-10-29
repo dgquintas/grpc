@@ -59,6 +59,15 @@ typedef struct servers_fixture {
   grpc_metadata_array *request_metadata_recv;
 } servers_fixture;
 
+typedef struct lb_server_fixture {
+  grpc_server *server;
+  grpc_call *server_call;
+  grpc_completion_queue *cq;
+  char *servers_hostport;
+  grpc_metadata_array *request_metadata_recv;
+  int port;
+} lb_server_fixture;
+
 typedef void (*verifier_fn)(const servers_fixture *, grpc_channel *,
                             const int *, const size_t);
 
@@ -181,6 +190,28 @@ static servers_fixture *setup_servers(const char *server_host,
     grpc_server_start(f->servers[i]);
   }
   gpr_free(ports);
+  return f;
+}
+
+static lb_server_fixture *setup_lb_server(const char *server_host) {
+  lb_server_fixture *f = gpr_malloc(sizeof(lb_server_fixture));
+  int got_port;
+  const size_t num_servers = 1;
+
+  f->request_metadata_recv =
+      gpr_malloc(sizeof(grpc_metadata_array) * num_servers);
+  /* Create servers. */
+  f->cq = grpc_completion_queue_create(NULL);
+  f->port = grpc_pick_unused_port_or_die();
+
+  gpr_join_host_port(&f->servers_hostport, server_host, f->port);
+
+  f->server = grpc_server_create(NULL, NULL);
+  grpc_server_register_completion_queue(f->server, f->cq, NULL);
+  GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
+                  f->server, f->servers_hostport)) > 0);
+  GPR_ASSERT(f->port == got_port);
+  grpc_server_start(f->server);
   return f;
 }
 

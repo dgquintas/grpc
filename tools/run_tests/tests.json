@@ -701,6 +701,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "grpclb_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "hpack_parser_test", 
     "platforms": [
       "linux", 
@@ -1473,7 +1491,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
-    "name": "grpclb_test", 
+    "name": "grpclb_api_test", 
     "platforms": [
       "linux", 
       "mac", 

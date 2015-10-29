@@ -629,6 +629,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "grpclb_test", 
+    "src": [
+      "test/core/client_config/grpclb_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "hpack_parser_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_test.c"
@@ -1367,18 +1381,15 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
+      "grpc++"
     ], 
     "headers": [
       "src/core/client_config/lb_policies/protos/load_balancer.grpc.pb.h", 
       "src/core/client_config/lb_policies/protos/load_balancer.pb.h"
     ], 
     "language": "c++", 
-    "name": "grpclb_test", 
+    "name": "grpclb_api_test", 
     "src": [
       "test/cpp/grpclb/grpclb_api_test.cc"
     ]
