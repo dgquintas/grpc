@@ -2468,13 +2468,13 @@ LIBGRPC_SRC = \
     src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/grpc_security.h \
@@ -2775,13 +2775,13 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
     src/core/census/tracing.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -9629,7 +9629,9 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/src/core/client_config/lb_policies/proto/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 $(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_grpclb_api_test: $(GRPCLB_API_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)

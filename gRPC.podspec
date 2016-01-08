@@ -271,13 +271,13 @@ Pod::Spec.new do |s|
                       'src/core/transport/static_metadata.h',
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
+                      'src/core/census/aggregation.h',
+                      'src/core/census/context.h',
+                      'src/core/census/rpc_metric_id.h',
                       'third_party/nanopb/pb.h',
                       'third_party/nanopb/pb_common.h',
                       'third_party/nanopb/pb_decode.h',
                       'third_party/nanopb/pb_encode.h',
-                      'src/core/census/aggregation.h',
-                      'src/core/census/context.h',
-                      'src/core/census/rpc_metric_id.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/byte_buffer.h',
                       'include/grpc/byte_buffer_reader.h',
@@ -433,13 +433,13 @@ Pod::Spec.new do |s|
                       'src/core/transport/static_metadata.c',
                       'src/core/transport/transport.c',
                       'src/core/transport/transport_op_string.c',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c',
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
                       'src/core/census/operation.c',
-                      'src/core/census/tracing.c'
+                      'src/core/census/tracing.c',
+                      'third_party/nanopb/pb_common.c',
+                      'third_party/nanopb/pb_decode.c',
+                      'third_party/nanopb/pb_encode.c'
 
     ss.private_header_files = 'src/core/profiling/timers.h',
                               'src/core/support/block_annotate.h',
@@ -580,13 +580,13 @@ Pod::Spec.new do |s|
                               'src/core/transport/static_metadata.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
+                              'src/core/census/aggregation.h',
+                              'src/core/census/context.h',
+                              'src/core/census/rpc_metric_id.h',
                               'third_party/nanopb/pb.h',
                               'third_party/nanopb/pb_common.h',
                               'third_party/nanopb/pb_decode.h',
-                              'third_party/nanopb/pb_encode.h',
-                              'src/core/census/aggregation.h',
-                              'src/core/census/context.h',
-                              'src/core/census/rpc_metric_id.h'
+                              'third_party/nanopb/pb_encode.h'
 
     ss.header_mappings_dir = '.'
     # This isn't officially supported in Cocoapods. We've asked for an alternative:

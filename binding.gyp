@@ -310,13 +310,13 @@
         'src/core/transport/static_metadata.c',
         'src/core/transport/transport.c',
         'src/core/transport/transport_op_string.c',
-        'third_party/nanopb/pb_common.c',
-        'third_party/nanopb/pb_decode.c',
-        'third_party/nanopb/pb_encode.c',
         'src/core/census/context.c',
         'src/core/census/initialize.c',
         'src/core/census/operation.c',
         'src/core/census/tracing.c',
+        'third_party/nanopb/pb_common.c',
+        'third_party/nanopb/pb_decode.c',
+        'third_party/nanopb/pb_encode.c',
       ],
       "conditions": [
         ['OS == "mac"', {

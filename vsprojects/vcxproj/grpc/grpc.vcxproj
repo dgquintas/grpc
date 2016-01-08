@@ -403,13 +403,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\transport\transport_impl.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\aggregation.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\context.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\src\core\httpcli\httpcli_security_connector.c">
@@ -708,12 +708,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\transport\transport_op_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\initialize.c">
@@ -721,6 +715,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\census\operation.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\census\tracing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
