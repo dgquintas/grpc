@@ -45,7 +45,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -54,8 +54,8 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
-  config.init_client(&f, client_args);
   config.init_server(&f, server_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -268,7 +268,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void ping_pong_streaming(grpc_end2end_test_config config) {
   int i;
 
   for (i = 1; i < 10; i++) {

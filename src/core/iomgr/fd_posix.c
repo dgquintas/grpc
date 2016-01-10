@@ -43,6 +43,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
@@ -100,6 +101,7 @@ static grpc_fd *alloc_fd(int fd) {
   r->read_watcher = r->write_watcher = NULL;
   r->on_done_closure = NULL;
   r->closed = 0;
+  r->released = 0;
   return r;
 }
 
@@ -158,7 +160,10 @@ void grpc_fd_global_shutdown(void) {
 
 grpc_fd *grpc_fd_create(int fd, const char *name) {
   grpc_fd *r = alloc_fd(fd);
-  grpc_iomgr_register_object(&r->iomgr_object, name);
+  char *name2;
+  gpr_asprintf(&name2, "%s fd=%d", name, fd);
+  grpc_iomgr_register_object(&r->iomgr_object, name2);
+  gpr_free(name2);
 #ifdef GRPC_FD_REF_COUNT_DEBUG
   gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, r, name);
 #endif
@@ -204,6 +209,14 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
 static int has_watchers(grpc_fd *fd) {
   return fd->read_watcher != NULL || fd->write_watcher != NULL ||
          fd->inactive_watcher_root.next != &fd->inactive_watcher_root;
+}
+
+int grpc_fd_wrapped_fd(grpc_fd *fd) {
+  if (fd->released || fd->closed) {
+    return -1;
+  } else {
+    return fd->fd;
+  }
 }
 
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
@@ -314,10 +327,10 @@ void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   gpr_mu_unlock(&fd->mu);
 }
 
-gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              grpc_pollset_worker *worker, gpr_uint32 read_mask,
-                              gpr_uint32 write_mask, grpc_fd_watcher *watcher) {
-  gpr_uint32 mask = 0;
+uint32_t grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
+                            grpc_pollset_worker *worker, uint32_t read_mask,
+                            uint32_t write_mask, grpc_fd_watcher *watcher) {
+  uint32_t mask = 0;
   grpc_closure *cur;
   int requested;
   /* keep track of pollers that have requested our events, in case they change

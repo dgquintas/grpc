@@ -83,9 +83,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                       grpc_resolver *r,
-                                       struct sockaddr *failing_address,
-                                       int failing_address_len);
+                                       grpc_resolver *r);
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
                           grpc_client_config **target_config,
                           grpc_closure *on_complete);
@@ -107,8 +105,13 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx,
 }
 
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                       grpc_resolver *resolver,
-                                       struct sockaddr *sa, int len) {}
+                                       grpc_resolver *resolver) {
+  sockaddr_resolver *r = (sockaddr_resolver *)resolver;
+  gpr_mu_lock(&r->mu);
+  r->published = 0;
+  sockaddr_maybe_finish_next_locked(exec_ctx, r);
+  gpr_mu_unlock(&r->mu);
+}
 
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                           grpc_client_config **target_config,
@@ -231,7 +234,7 @@ static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr,
       gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
       goto done;
     }
-    in->sin_port = htons((gpr_uint16)port_num);
+    in->sin_port = htons((uint16_t)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
@@ -272,7 +275,7 @@ static int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr,
       gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
       goto done;
     }
-    in6->sin6_port = htons((gpr_uint16)port_num);
+    in6->sin6_port = htons((uint16_t)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
     goto done;
@@ -348,6 +351,9 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
+    gpr_free(r->lb_policy_name);
+    gpr_free(r->addrs);
+    gpr_free(r->addrs_len);
     gpr_free(r);
     return NULL;
   }

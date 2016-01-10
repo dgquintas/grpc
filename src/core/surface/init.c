@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,8 +83,8 @@ static grpc_plugin g_all_of_the_plugins[MAX_PLUGINS];
 static int g_number_of_plugins = 0;
 
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
-  GRPC_API_TRACE("grpc_register_plugin(init=%lx, destroy=%lx)", 2,
-                 ((unsigned long)init, (unsigned long)destroy));
+  GRPC_API_TRACE("grpc_register_plugin(init=%p, destroy=%p)", 2,
+                 ((void*)(intptr_t)init, (void*)(intptr_t)destroy));
   GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
   g_all_of_the_plugins[g_number_of_plugins].init = init;
   g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;
@@ -149,6 +149,7 @@ void grpc_shutdown(void) {
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
+    grpc_lb_policy_registry_shutdown();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -119,8 +119,8 @@ grpc_mdelem *grpc_compression_encoding_mdelem(
       return GRPC_MDELEM_GRPC_ENCODING_DEFLATE;
     case GRPC_COMPRESS_GZIP:
       return GRPC_MDELEM_GRPC_ENCODING_GZIP;
-    case GRPC_COMPRESS_ALGORITHMS_COUNT:
-      return NULL;
+    default:
+      break;
   }
   return NULL;
 }
@@ -139,25 +139,9 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     case GRPC_COMPRESS_LEVEL_HIGH:
       return GRPC_COMPRESS_DEFLATE;
     default:
-      /* we shouldn't be making it here */
+      gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
       abort();
-      return GRPC_COMPRESS_NONE;
   }
-}
-
-grpc_compression_level grpc_compression_level_for_algorithm(
-    grpc_compression_algorithm algorithm) {
-  grpc_compression_level clevel;
-  GRPC_API_TRACE("grpc_compression_level_for_algorithm(algorithm=%d)", 1,
-                 ((int)algorithm));
-  for (clevel = GRPC_COMPRESS_LEVEL_NONE; clevel < GRPC_COMPRESS_LEVEL_COUNT;
-       ++clevel) {
-    if (grpc_compression_algorithm_for_level(clevel) == algorithm) {
-      return clevel;
-    }
-  }
-  abort();
-  return GRPC_COMPRESS_LEVEL_NONE;
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {

@@ -104,6 +104,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     GPR_ASSERT(c->result->transport);
+    c->result->channel_args = c->args.channel_args;
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *));
     c->result->filters[0] = &grpc_http_client_filter;
     c->result->num_filters = 1;
@@ -171,7 +172,6 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   c->base.vtable = &connector_vtable;
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;
-  args->master = f->master;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(exec_ctx, &c->base);
   grpc_channel_args_destroy(final_args);
@@ -218,6 +218,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   GRPC_CHANNEL_INTERNAL_REF(f->master, "subchannel_factory");
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
+    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, f->master, "subchannel_factory");
+    grpc_subchannel_factory_unref(&exec_ctx, &f->base);
+    grpc_exec_ctx_finish(&exec_ctx);
     return NULL;
   }
 

@@ -45,7 +45,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -54,8 +54,8 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
-  config.init_client(&f, client_args);
   config.init_server(&f, server_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -348,7 +348,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
        * both);
        * check this here */
       /* We'll get tag 303 or 403, we want 300, 400 */
-      live_call = ((int)(gpr_intptr)ev.tag) - 1;
+      live_call = ((int)(intptr_t)ev.tag) - 1;
       got_client_start = 1;
     }
   }
@@ -433,6 +433,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void max_concurrent_streams(grpc_end2end_test_config config) {
   test_max_concurrent_streams(config);
 }

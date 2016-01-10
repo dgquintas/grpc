@@ -38,11 +38,11 @@ RUN apt-get update && apt-get install -y \
   autotools-dev \
   build-essential \
   bzip2 \
-  ccache \
   curl \
   gcc \
   gcc-multilib \
   git \
+  golang \
   gyp \
   lcov \
   libc6 \
@@ -51,6 +51,7 @@ RUN apt-get update && apt-get install -y \
   libgtest-dev \
   libtool \
   make \
+  perl \
   strace \
   python-dev \
   python-setuptools \
@@ -59,14 +60,6 @@ RUN apt-get update && apt-get install -y \
   unzip \
   wget \
   zip && apt-get clean
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 ##################
 # C++ dependencies
@@ -131,7 +124,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python packages from PyPI
 RUN pip install pip --upgrade
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox
 
 # For sanity test
 RUN pip install simplejson mako

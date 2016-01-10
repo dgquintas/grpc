@@ -49,7 +49,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
                                            void *user_data);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
-                            gpr_uint32 propagation_mask,
+                            uint32_t propagation_mask,
                             grpc_completion_queue *cq,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
@@ -58,7 +58,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
 
 void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq);
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
@@ -91,19 +90,6 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
 
-void grpc_server_log_request_call(char *file, int line,
-                                  gpr_log_severity severity,
-                                  grpc_server *server, grpc_call **call,
-                                  grpc_call_details *details,
-                                  grpc_metadata_array *initial_metadata,
-                                  grpc_completion_queue *cq_bound_to_call,
-                                  grpc_completion_queue *cq_for_notification,
-                                  void *tag);
-
-void grpc_server_log_shutdown(char *file, int line, gpr_log_severity severity,
-                              grpc_server *server, grpc_completion_queue *cq,
-                              void *tag);
-
 /* Set a context pointer.
    No thread safety guarantees are made wrt this value. */
 void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
@@ -114,7 +100,7 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_api_trace) grpc_call_log_batch(sev, call, ops, nops, tag)
 
-gpr_uint8 grpc_call_is_client(grpc_call *call);
+uint8_t grpc_call_is_client(grpc_call *call);
 
 #ifdef __cplusplus
 }

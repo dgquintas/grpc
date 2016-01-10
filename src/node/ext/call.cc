@@ -234,7 +234,9 @@ class SendMetadataOp : public Op {
 
 class SendMessageOp : public Op {
  public:
-  SendMessageOp() { send_message = NULL; }
+  SendMessageOp() {
+    send_message = NULL;
+  }
   ~SendMessageOp() {
     if (send_message != NULL) {
       grpc_byte_buffer_destroy(send_message);
@@ -269,7 +271,6 @@ class SendMessageOp : public Op {
   std::string GetTypeString() const {
     return "send_message";
   }
-
  private:
   grpc_byte_buffer *send_message;
 };
@@ -585,7 +586,7 @@ NAN_METHOD(Call::New) {
         return Nan::ThrowTypeError(
             "Call's fifth argument must be another call, if provided");
       }
-      gpr_uint32 propagate_flags = GRPC_PROPAGATE_DEFAULTS;
+      uint32_t propagate_flags = GRPC_PROPAGATE_DEFAULTS;
       if (info[5]->IsUint32()) {
         propagate_flags = Nan::To<uint32_t>(info[5]).FromJust();
       } else if (!(info[5]->IsUndefined() || info[5]->IsNull())) {

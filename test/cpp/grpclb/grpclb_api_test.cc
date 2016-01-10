@@ -69,9 +69,9 @@ TEST_F(GrpclbTest, ParseResponse) {
   client_stats_report_interval->set_nanos(456);
 
   const std::string encoded_response = response.SerializeAsString();
-  gpr_slice encoded_slice = gpr_slice_from_copied_string(encoded_response.c_str());
-  grpc_grpclb_response* c_response =
-      grpc_grpclb_response_parse(encoded_slice);
+  gpr_slice encoded_slice =
+      gpr_slice_from_copied_string(encoded_response.c_str());
+  grpc_grpclb_response* c_response = grpc_grpclb_response_parse(encoded_slice);
   EXPECT_TRUE(c_response->has_initial_response);
   EXPECT_TRUE(c_response->initial_response.has_client_config);
   EXPECT_FALSE(c_response->initial_response.has_load_balancer_delegate);
@@ -101,8 +101,9 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   expiration_interval->set_nanos(999);
 
   const std::string encoded_response = response.SerializeAsString();
-  gpr_slice encoded_slice = gpr_slice_from_copied_string(encoded_response.c_str());
-  grpc_grpclb_serverlist *c_serverlist =
+  gpr_slice encoded_slice =
+      gpr_slice_from_copied_string(encoded_response.c_str());
+  grpc_grpclb_serverlist* c_serverlist =
       grpc_grpclb_response_parse_serverlist(encoded_slice);
   ASSERT_EQ(c_serverlist->num_servers, 2ul);
   EXPECT_TRUE(c_serverlist->servers[0]->has_ip_address);

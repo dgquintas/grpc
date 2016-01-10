@@ -86,8 +86,6 @@ typedef struct grpc_pollset {
 struct grpc_pollset_vtable {
   void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                  struct grpc_fd *fd, int and_unlock_pollset);
-  void (*del_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                 struct grpc_fd *fd, int and_unlock_pollset);
   void (*maybe_work_and_unlock)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                                 grpc_pollset_worker *worker,
                                 gpr_timespec deadline, gpr_timespec now);
@@ -99,10 +97,6 @@ struct grpc_pollset_vtable {
 
 /* Add an fd to a pollset */
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                         struct grpc_fd *fd);
-/* Force remove an fd from a pollset (normally they are removed on the next
-   poll after an fd is orphaned) */
-void grpc_pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          struct grpc_fd *fd);
 
 /* Returns the fd to listen on for kicks */
@@ -128,7 +122,7 @@ int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
    -- mostly for fd_posix's use. */
 void grpc_pollset_kick_ext(grpc_pollset *p,
                            grpc_pollset_worker *specific_worker,
-                           gpr_uint32 flags);
+                           uint32_t flags);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_exec_ctx *exec_ctx,

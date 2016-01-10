@@ -63,7 +63,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(intptr_t)i; }
 
 #ifdef GPR_POSIX_SOCKET
 static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
@@ -179,6 +179,17 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
+
+    // It is currently unsupported to mix sync and async services
+    // in the same server, so first test that (for coverage)
+    ServerBuilder build_bad;
+    build_bad.AddListeningPort(server_address_.str(),
+                               grpc::InsecureServerCredentials());
+    build_bad.RegisterAsyncService(&service_);
+    grpc::cpp::test::util::TestService::Service sync_service;
+    build_bad.RegisterService(&sync_service);
+    GPR_ASSERT(build_bad.BuildAndStart() == nullptr);
+
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),

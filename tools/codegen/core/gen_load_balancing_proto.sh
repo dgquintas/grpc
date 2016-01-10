@@ -29,4 +29,8 @@ protoc \
 --nanopb_out='-L#include\ \"third_party/nanopb/pb.h\"'":$GRPC_ROOT/src/core/proto" \
 "$(basename $1)"
 
+readonly PROTO_BASENAME=$(basename $1 .proto)
+sed -i "s:$PROTO_BASENAME.pb.h:src/core/proto/$PROTO_BASENAME.pb.h:g" \
+    "$GRPC_ROOT/src/core/proto/$PROTO_BASENAME.pb.c"
+
 popd > /dev/null

@@ -153,6 +153,7 @@ Pod::Spec.new do |s|
                       'src/core/security/security_context.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/ssl_transport_security.h',
+                      'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/census/grpc_filter.h',
@@ -165,7 +166,6 @@ Pod::Spec.new do |s|
                       'src/core/channel/context.h',
                       'src/core/channel/http_client_filter.h',
                       'src/core/channel/http_server_filter.h',
-                      'src/core/channel/noop_filter.h',
                       'src/core/channel/subchannel_call_holder.h',
                       'src/core/client_config/client_config.h',
                       'src/core/client_config/connector.h',
@@ -184,8 +184,6 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolvers/sockaddr_resolver.h',
                       'src/core/client_config/subchannel.h',
                       'src/core/client_config/subchannel_factory.h',
-                      'src/core/client_config/subchannel_factory_decorators/add_channel_arg.h',
-                      'src/core/client_config/subchannel_factory_decorators/merge_channel_args.h',
                       'src/core/client_config/uri_parser.h',
                       'src/core/compression/algorithm_metadata.h',
                       'src/core/compression/message_compress.h',
@@ -274,13 +272,13 @@ Pod::Spec.new do |s|
                       'src/core/transport/static_metadata.h',
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
+                      'src/core/census/aggregation.h',
+                      'src/core/census/context.h',
+                      'src/core/census/rpc_metric_id.h',
                       'third_party/nanopb/pb.h',
                       'third_party/nanopb/pb_common.h',
                       'third_party/nanopb/pb_decode.h',
                       'third_party/nanopb/pb_encode.h',
-                      'src/core/census/aggregation.h',
-                      'src/core/census/context.h',
-                      'src/core/census/rpc_metric_id.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/byte_buffer.h',
                       'include/grpc/byte_buffer_reader.h',
@@ -319,7 +317,6 @@ Pod::Spec.new do |s|
                       'src/core/channel/connected_channel.c',
                       'src/core/channel/http_client_filter.c',
                       'src/core/channel/http_server_filter.c',
-                      'src/core/channel/noop_filter.c',
                       'src/core/channel/subchannel_call_holder.c',
                       'src/core/client_config/client_config.c',
                       'src/core/client_config/connector.c',
@@ -339,8 +336,6 @@ Pod::Spec.new do |s|
                       'src/core/client_config/resolvers/sockaddr_resolver.c',
                       'src/core/client_config/subchannel.c',
                       'src/core/client_config/subchannel_factory.c',
-                      'src/core/client_config/subchannel_factory_decorators/add_channel_arg.c',
-                      'src/core/client_config/subchannel_factory_decorators/merge_channel_args.c',
                       'src/core/client_config/uri_parser.c',
                       'src/core/compression/algorithm.c',
                       'src/core/compression/message_compress.c',
@@ -402,6 +397,7 @@ Pod::Spec.new do |s|
                       'src/core/surface/channel.c',
                       'src/core/surface/channel_connectivity.c',
                       'src/core/surface/channel_create.c',
+                      'src/core/surface/channel_ping.c',
                       'src/core/surface/completion_queue.c',
                       'src/core/surface/event_string.c',
                       'src/core/surface/init.c',
@@ -439,13 +435,13 @@ Pod::Spec.new do |s|
                       'src/core/transport/static_metadata.c',
                       'src/core/transport/transport.c',
                       'src/core/transport/transport_op_string.c',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c',
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
                       'src/core/census/operation.c',
-                      'src/core/census/tracing.c'
+                      'src/core/census/tracing.c',
+                      'third_party/nanopb/pb_common.c',
+                      'third_party/nanopb/pb_decode.c',
+                      'third_party/nanopb/pb_encode.c'
 
     ss.private_header_files = 'src/core/profiling/timers.h',
                               'src/core/support/block_annotate.h',
@@ -468,6 +464,7 @@ Pod::Spec.new do |s|
                               'src/core/security/security_context.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/ssl_transport_security.h',
+                              'src/core/tsi/ssl_types.h',
                               'src/core/tsi/transport_security.h',
                               'src/core/tsi/transport_security_interface.h',
                               'src/core/census/grpc_filter.h',
@@ -480,7 +477,6 @@ Pod::Spec.new do |s|
                               'src/core/channel/context.h',
                               'src/core/channel/http_client_filter.h',
                               'src/core/channel/http_server_filter.h',
-                              'src/core/channel/noop_filter.h',
                               'src/core/channel/subchannel_call_holder.h',
                               'src/core/client_config/client_config.h',
                               'src/core/client_config/connector.h',
@@ -499,8 +495,6 @@ Pod::Spec.new do |s|
                               'src/core/client_config/resolvers/sockaddr_resolver.h',
                               'src/core/client_config/subchannel.h',
                               'src/core/client_config/subchannel_factory.h',
-                              'src/core/client_config/subchannel_factory_decorators/add_channel_arg.h',
-                              'src/core/client_config/subchannel_factory_decorators/merge_channel_args.h',
                               'src/core/client_config/uri_parser.h',
                               'src/core/compression/algorithm_metadata.h',
                               'src/core/compression/message_compress.h',
@@ -589,13 +583,13 @@ Pod::Spec.new do |s|
                               'src/core/transport/static_metadata.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
+                              'src/core/census/aggregation.h',
+                              'src/core/census/context.h',
+                              'src/core/census/rpc_metric_id.h',
                               'third_party/nanopb/pb.h',
                               'third_party/nanopb/pb_common.h',
                               'third_party/nanopb/pb_decode.h',
-                              'third_party/nanopb/pb_encode.h',
-                              'src/core/census/aggregation.h',
-                              'src/core/census/context.h',
-                              'src/core/census/rpc_metric_id.h'
+                              'third_party/nanopb/pb_encode.h'
 
     ss.header_mappings_dir = '.'
     # This isn't officially supported in Cocoapods. We've asked for an alternative:
@@ -609,7 +603,7 @@ Pod::Spec.new do |s|
 
     ss.requires_arc = false
     ss.libraries = 'z'
-    ss.dependency 'OpenSSL', '~> 1.0.204.1'
+    ss.dependency 'BoringSSL', '~> 1.0'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end

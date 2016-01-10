@@ -40,12 +40,12 @@
 #include "src/core/transport/static_metadata.h"
 
 typedef struct call_data {
-  gpr_uint8 seen_path;
-  gpr_uint8 seen_post;
-  gpr_uint8 sent_status;
-  gpr_uint8 seen_scheme;
-  gpr_uint8 seen_te_trailers;
-  gpr_uint8 seen_authority;
+  uint8_t seen_path;
+  uint8_t seen_post;
+  uint8_t sent_status;
+  uint8_t seen_scheme;
+  uint8_t seen_te_trailers;
+  uint8_t seen_authority;
   grpc_linked_mdelem status;
   grpc_linked_mdelem content_type;
 
@@ -58,7 +58,7 @@ typedef struct call_data {
   grpc_closure hs_on_recv;
 } call_data;
 
-typedef struct channel_data { gpr_uint8 unused; } channel_data;
+typedef struct channel_data { uint8_t unused; } channel_data;
 
 typedef struct {
   grpc_call_element *elem;
@@ -124,7 +124,6 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
         GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
-    GRPC_MDELEM_UNREF(md);
     calld->seen_authority = 1;
     return authority;
   } else {
@@ -225,8 +224,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem) {
-}
+                                 grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_http_server_filter = {
     hs_start_transport_op, grpc_channel_next_op, sizeof(call_data),

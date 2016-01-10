@@ -88,6 +88,11 @@
   },
   'targets': [
     {
+      'cflags': [
+        '-std=c99',
+        '-Wall',
+        '-Werror'
+      ],
       'target_name': 'gpr',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -145,6 +150,11 @@
       ],
     },
     {
+      'cflags': [
+        '-std=c99',
+        '-Wall',
+        '-Werror'
+      ],
       'target_name': 'grpc',
       'product_prefix': 'lib',
       'type': 'static_library',
@@ -183,7 +193,6 @@
         'src/core/channel/connected_channel.c',
         'src/core/channel/http_client_filter.c',
         'src/core/channel/http_server_filter.c',
-        'src/core/channel/noop_filter.c',
         'src/core/channel/subchannel_call_holder.c',
         'src/core/client_config/client_config.c',
         'src/core/client_config/connector.c',
@@ -203,8 +212,6 @@
         'src/core/client_config/resolvers/sockaddr_resolver.c',
         'src/core/client_config/subchannel.c',
         'src/core/client_config/subchannel_factory.c',
-        'src/core/client_config/subchannel_factory_decorators/add_channel_arg.c',
-        'src/core/client_config/subchannel_factory_decorators/merge_channel_args.c',
         'src/core/client_config/uri_parser.c',
         'src/core/compression/algorithm.c',
         'src/core/compression/message_compress.c',
@@ -266,6 +273,7 @@
         'src/core/surface/channel.c',
         'src/core/surface/channel_connectivity.c',
         'src/core/surface/channel_create.c',
+        'src/core/surface/channel_ping.c',
         'src/core/surface/completion_queue.c',
         'src/core/surface/event_string.c',
         'src/core/surface/init.c',
@@ -303,13 +311,13 @@
         'src/core/transport/static_metadata.c',
         'src/core/transport/transport.c',
         'src/core/transport/transport_op_string.c',
-        'third_party/nanopb/pb_common.c',
-        'third_party/nanopb/pb_decode.c',
-        'third_party/nanopb/pb_encode.c',
         'src/core/census/context.c',
         'src/core/census/initialize.c',
         'src/core/census/operation.c',
         'src/core/census/tracing.c',
+        'third_party/nanopb/pb_common.c',
+        'third_party/nanopb/pb_decode.c',
+        'third_party/nanopb/pb_encode.c',
       ],
       "conditions": [
         ['OS == "mac"', {
@@ -324,7 +332,7 @@
         "<!(node -e \"require('nan')\")"
       ],
       'cflags': [
-        '-std=c++0x',
+        '-std=c++11',
         '-Wall',
         '-pthread',
         '-g',
@@ -340,7 +348,6 @@
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9',
             'OTHER_CFLAGS': [
-              '-std=c++11',
               '-stdlib=libc++'
             ]
           }
