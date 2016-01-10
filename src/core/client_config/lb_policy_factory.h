@@ -36,6 +36,7 @@
 
 #include "src/core/client_config/lb_policy.h"
 #include "src/core/client_config/subchannel.h"
+#include "src/core/client_config/subchannel_factory.h"
 
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;

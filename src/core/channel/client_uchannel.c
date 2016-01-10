@@ -277,3 +277,15 @@ void grpc_client_uchannel_set_subchannel(grpc_channel *uchannel,
   chand->subchannel = subchannel;
   gpr_mu_unlock(&chand->mu_state);
 }
+
+grpc_subchannel *grpc_client_uchannel_get_subchannel(grpc_channel *uchannel) {
+  grpc_subchannel *sc;
+  grpc_channel_element *elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(uchannel));
+  channel_data *chand = elem->channel_data;
+  GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
+  gpr_mu_lock(&chand->mu_state);
+  sc = chand->subchannel;
+  gpr_mu_unlock(&chand->mu_state);
+  return sc;
+}

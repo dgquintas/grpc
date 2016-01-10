@@ -112,6 +112,9 @@
     <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\grpclb.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
@@ -580,6 +583,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\grpclb.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.h">
       <Filter>src\core\client_config\lb_policies</Filter>

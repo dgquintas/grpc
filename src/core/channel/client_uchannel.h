@@ -67,4 +67,7 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
 void grpc_client_uchannel_set_subchannel(grpc_channel *uchannel,
                                          grpc_subchannel *subchannel);
 
+grpc_subchannel *grpc_client_uchannel_get_subchannel(grpc_channel *uchannel);
+
+
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_MICROCHANNEL_H */

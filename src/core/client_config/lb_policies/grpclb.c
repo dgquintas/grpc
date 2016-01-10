@@ -32,7 +32,7 @@
  */
 
 #include "src/core/client_config/lb_policy_factory.h"
-#include "src/core/client_config/lb_policies/glb.h"
+#include "src/core/client_config/lb_policies/grpclb.h"
 #include "src/core/client_config/lb_policies/load_balancer_api.h"
 #include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/channel/client_uchannel.h"
@@ -102,7 +102,6 @@ done:
 static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
                                  grpc_grpclb_serverlist *serverlist,
                                  grpc_subchannel_factory *sc_factory) {
-  /* let's assume we've gotten a response */
   grpc_subchannel **subchannels;
   size_t num_addrs = serverlist->num_servers;
   struct sockaddr_storage *addrs =
@@ -115,18 +114,21 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_args args;
   grpc_lb_policy_args rr_policy_args;
 
+  if (serverlist == NULL) {
+    return NULL;
+  }
+
   for (i = 0; i < num_addrs; i++) {
     gpr_asprintf(&hostport, "%s:%d", serverlist->servers[i]->ip_address,
                  serverlist->servers[i]->port);
     if (!parse_ipv4(hostport, &addrs[i], &addrs_len[i])) {
-      errors_found = 1; /* GPR_TRUE */
+      errors_found = 1;
     }
     gpr_free(hostport);
     if (errors_found) break;
   }
 
   subchannels = gpr_malloc(sizeof(grpc_subchannel *) * num_addrs);
-  /* ahora paso las putas addrs a la subchannel factory */
   for (i = 0; i < num_addrs; i++) {
     memset(&args, 0, sizeof(args));
     args.addr = (struct sockaddr *)(&addrs[i]);
@@ -137,8 +139,6 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
 
   rr_policy_args.num_subchannels = num_addrs;
   rr_policy_args.subchannels = subchannels;
-  /* si todo lo anterior funciona XD, ahora es cuestion de instanciar una
-   * rr_policy y pasarle los subchannels */
   return grpc_lb_policy_create("round_robin", &rr_policy_args);
 }
 
@@ -149,7 +149,27 @@ typedef struct lb_stream {
   grpc_lb_policy *rr;
   pending_pick *pp;
   grpc_subchannel_factory *subchannel_factory;
+  grpc_grpclb_serverlist *serverlist;
 } lb_stream;
+
+static void process_urpc_response(grpc_exec_ctx *exec_ctx, void *arg,
+                                  int iomgr_success) {
+  /* XXX */
+  pending_pick *pp;
+  lb_stream *lbs = arg;
+  GPR_ASSERT(lbs->subchannel_factory != NULL);
+  if (lbs->serverlist != NULL) {
+    lbs->rr = create_rr(exec_ctx, lbs->serverlist, lbs->subchannel_factory);
+    GPR_ASSERT(lbs->rr != NULL);
+    while ((pp = lbs->pp) != NULL) {
+      grpc_lb_policy_pick(exec_ctx, lbs->rr, pp->pollset, pp->initial_metadata,
+                          pp->target, pp->on_complete);
+      lbs->pp = lbs->pp->next;
+    }
+  } else {
+    lbs->rr = NULL;
+  }
+}
 
 static lb_stream *lbs_create(grpc_subchannel *pick,
                              pending_pick *pending_picks,
@@ -201,7 +221,6 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
   const char *service_name = "service_name";
   const char *service_host = "localhost";
   const gpr_timespec service_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  grpc_grpclb_request *request;
   grpc_channel *uchannel = uchannel_create(lbs->pick, service_name);
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
@@ -224,8 +243,6 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
   int read_tag;
   pending_pick *pp;
   grpc_subchannel *uchannel_subchannel;
-
-  request = grpc_grpclb_request_create(service_name);
 
   gpr_mu_lock(&lbs->mu);
   c = grpc_channel_create_call(uchannel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
@@ -268,7 +285,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
   gpr_log(GPR_INFO, "initial req at urpc_loop");
   while (shutdown == 0) {
     grpc_byte_buffer *request_payload;
-    grpc_grpclb_request *request;
+    const grpc_grpclb_request *request = grpc_grpclb_request_create(service_name);
     grpc_grpclb_response *response;
     gpr_slice encoded_request;
 
@@ -302,7 +319,6 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
               ev.type, read_tag);
       if (ev.success && response_payload_recv != NULL) {
         grpc_byte_buffer_reader reader;
-        grpc_grpclb_serverlist *serverlist;
         gpr_slice incoming;
 
         gpr_log(GPR_INFO, "got lb response at urpc_loop");
@@ -310,15 +326,16 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
         incoming = grpc_byte_buffer_reader_readall(&reader);
         response = grpc_grpclb_response_parse(incoming);
         GPR_ASSERT(response->has_server_list);
-        serverlist = grpc_grpclb_response_parse_serverlist(incoming);
-        lb_stream_set_serverlist(lbs, serverlist);
+        lbs->serverlist = grpc_grpclb_response_parse_serverlist(incoming);
         gpr_slice_unref(incoming);
         grpc_byte_buffer_reader_destroy(&reader);
         /* will pick(RR) for all pending picks */
-        grpc_exec_ctx_enqueue(&exec_ctx, &lbs->process_response_cb, 1);
+        grpc_exec_ctx_enqueue(
+            &exec_ctx, grpc_closure_create(process_urpc_response, lbs), 1);
         grpc_exec_ctx_flush(&exec_ctx);
       } else {
         /* XXX: check for unimplemented */
+        lbs_shutdown(lbs);
         break;
       }
     } else if (ev.tag == tag(1)) {
@@ -361,10 +378,10 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
 
   /* in any case, we "return" the subchannel picked by pick_first to the pending
    * picks */
-  uchannel_subchannel = grpc_client_uchannel_get_subchannel(lbs->uchannel);
+  uchannel_subchannel = grpc_client_uchannel_get_subchannel(uchannel);
   if (uchannel_subchannel) {
-    while ((pp = lbs->pending_picks)) {
-      lbs->pending_picks = pp->next;
+    while ((pp = lbs->pp)) {
+      lbs->pp = pp->next;
       *pp->target = uchannel_subchannel;
       grpc_subchannel_del_interested_party(&exec_ctx, uchannel_subchannel,
                                            pp->pollset);
@@ -473,6 +490,7 @@ static void on_complete_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   on_complete_arg *oca = arg;
   lb_stream *lbs = pts_pop(&oca->pts, oca->pick);
   GPR_ASSERT(lbs != NULL);
+  lbs_destroy(lbs);
   gpr_free(lbs);
 }
 
@@ -505,7 +523,7 @@ typedef struct {
 static void pf_pick(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
   pf_pick_arg *pfpa = arg;
   lb_stream *lbs;
-  on_complete_arg *on_complete_arg;
+  on_complete_arg *oc_arg;
   grpc_closure *on_complete;
 
   if (pfpa->pick == NULL) {
@@ -520,10 +538,10 @@ static void pf_pick(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
   }
   GPR_ASSERT(lbs != NULL);
 
-  on_complete_arg = gpr_malloc(sizeof(on_complete_arg));
-  on_complete_arg->pts = pfpa->pts;
-  on_complete_arg->pick = pfpa->pick;
-  on_complete = grpc_closure_create(on_complete_cb, on_complete_arg);
+  oc_arg = gpr_malloc(sizeof(on_complete_arg));
+  oc_arg->pts = pfpa->pts;
+  oc_arg->pick = pfpa->pick;
+  on_complete = grpc_closure_create(on_complete_cb, oc_arg);
 
   lbs_next(lbs, on_complete);
 }
@@ -598,7 +616,7 @@ int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
   /* get the first input subchannel that connects into p->pf_pick */
   grpc_lb_policy_pick(exec_ctx, p->pick_first, pollset, initial_metadata,
-                      &p->pf_pick, &p->pf_pick_cb);
+                      &p->pf_pick /* target */, &p->pf_pick_cb);
   gpr_mu_unlock(&p->mu);
   return 0; /* picking is always delayed */
 }
@@ -648,6 +666,7 @@ static grpc_lb_policy *glb_create(grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
   grpc_lb_policy_args pf_args;
   glb_lb_policy *p = gpr_malloc(sizeof(*p));
+  pf_pick_arg *pfpa;
   GPR_ASSERT(args->num_subchannels > 0);
   memset(p, 0, sizeof(*p));
   grpc_lb_policy_init(&p->base, &glb_lb_policy_vtable);
@@ -665,11 +684,14 @@ static grpc_lb_policy *glb_create(grpc_lb_policy_factory *factory,
   pf_args.num_subchannels = args->num_subchannels;
   p->pick_first = grpc_lb_policy_create("pick_first", &pf_args);
   p->pf_conn_state = GRPC_CHANNEL_IDLE;
-  grpc_closure_init(&p->pf_pick_cb, pf_pick, p);
 
   p->pts = pts_create();
   GPR_ASSERT(args->subchannel_factory != NULL);
   p->subchannel_factory = args->subchannel_factory;
+
+  pfpa = pfpa_create(p->pending_picks, p->subchannel_factory, p->pts);
+  grpc_closure_init(&p->pf_pick_cb, pf_pick, pfpa);
+
   gpr_mu_init(&p->mu);
   return &p->base;
 }

@@ -145,6 +145,10 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = r->num_addrs;
     lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
+    if (lb_policy == NULL) {
+      gpr_log(GPR_ERROR, "Unknown LB policy '%s'", r->lb_policy_name);
+      GPR_ASSERT(0);
+    }
     gpr_free(subchannels);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "sockaddr");

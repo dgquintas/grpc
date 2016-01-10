@@ -260,6 +260,7 @@
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
     <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\grpclb.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
@@ -405,6 +406,8 @@
     <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\grpclb.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.c">
     </ClCompile>
