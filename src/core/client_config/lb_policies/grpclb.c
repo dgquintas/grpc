@@ -55,7 +55,7 @@ typedef struct pending_pick {
   struct pending_pick *next;
   grpc_pollset *pollset;
   grpc_metadata_batch *initial_metadata;
-  grpc_subchannel **target;
+  grpc_connected_subchannel **target;
   grpc_closure *on_complete;
 } pending_pick;
 
@@ -86,7 +86,7 @@ static int parse_ipv4(const char *host_port, struct sockaddr_storage *addr,
       gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
       goto done;
     }
-    in->sin_port = htons((gpr_uint16)port_num);
+    in->sin_port = htons((uint16_t)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
@@ -145,7 +145,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
 typedef struct lb_stream {
   gpr_mu mu;
   int shutdown;
-  grpc_subchannel *pick;
+  grpc_connected_subchannel *pick;
   grpc_lb_policy *rr;
   pending_pick *pp;
   grpc_subchannel_factory *subchannel_factory;
@@ -171,7 +171,7 @@ static void process_urpc_response(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
-static lb_stream *lbs_create(grpc_subchannel *pick,
+static lb_stream *lbs_create(grpc_connected_subchannel *pick,
                              pending_pick *pending_picks,
                              grpc_subchannel_factory *subchannel_factory) {
   lb_stream *lbs = gpr_malloc(sizeof(lb_stream));
@@ -188,12 +188,12 @@ static void lbs_destroy(lb_stream *lbs) {
   gpr_mu_destroy(&lbs->mu);
 }
 
-static void lbs_broadcast(grpc_exec_ctx *exec_ctx, lb_stream *lbs,
+/*static void lbs_broadcast(grpc_exec_ctx *exec_ctx, lb_stream *lbs,
                           grpc_transport_op *op) {
   if (lbs->rr != NULL) {
     grpc_lb_policy_broadcast(exec_ctx, lbs->rr, op);
   }
-}
+}*/
 
 static void lbs_shutdown(lb_stream *lbs) {
   gpr_mu_lock(&lbs->mu);
@@ -201,7 +201,7 @@ static void lbs_shutdown(lb_stream *lbs) {
   gpr_mu_unlock(&lbs->mu);
 }
 
-static grpc_channel *uchannel_create(grpc_subchannel *sc,
+static grpc_channel *uchannel_create(grpc_connected_subchannel *sc,
                                      const char *service_name) {
   grpc_channel *uchannel;
   grpc_channel_args args;
@@ -209,13 +209,13 @@ static grpc_channel *uchannel_create(grpc_subchannel *sc,
   args.num_args = 0;
   args.args = NULL;
 
-  uchannel = grpc_client_uchannel_create(sc, &args);
-  grpc_client_uchannel_set_subchannel(uchannel, sc);
+  uchannel = grpc_client_uchannel_create(&args);
+  grpc_client_uchannel_set_connected_subchannel(uchannel, sc);
 
   return uchannel;
 }
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 /* XXX former probe_for_lb_service */
 static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
   const char *service_name = "service_name";
@@ -242,7 +242,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   int read_tag;
   pending_pick *pp;
-  grpc_subchannel *uchannel_subchannel;
+  grpc_connected_subchannel *uchannel_subchannel;
 
   gpr_mu_lock(&lbs->mu);
   c = grpc_channel_create_call(uchannel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
@@ -314,7 +314,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
      * subchannel */
     if (ev.tag == tag(2)) {
       gpr_log(GPR_INFO, "urpc_loop: got message");
-      read_tag = ((int)(gpr_intptr)ev.tag);
+      read_tag = ((int)(intptr_t)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag: %d", ev.success,
               ev.type, read_tag);
       if (ev.success && response_payload_recv != NULL) {
@@ -340,7 +340,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
       }
     } else if (ev.tag == tag(1)) {
       gpr_log(GPR_INFO, "urpc_loop: got lb service close");
-      read_tag = ((int)(gpr_intptr)ev.tag);
+      read_tag = ((int)(intptr_t)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag: %d", ev.success,
               ev.type, read_tag);
       break;
@@ -367,7 +367,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     grpc_completion_queue_next(cq, call_deadline, NULL);
     ev = grpc_completion_queue_next(cq, call_deadline, NULL);
-    read_tag = ((int)(gpr_intptr)ev.tag);
+    read_tag = ((int)(intptr_t)ev.tag);
     gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag: %d", ev.success,
             ev.type, read_tag);
     /*ev = grpc_completion_queue_next(cq, call_deadline, NULL);
@@ -378,13 +378,11 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
 
   /* in any case, we "return" the subchannel picked by pick_first to the pending
    * picks */
-  uchannel_subchannel = grpc_client_uchannel_get_subchannel(uchannel);
+  uchannel_subchannel = grpc_client_uchannel_get_connected_subchannel(uchannel);
   if (uchannel_subchannel) {
     while ((pp = lbs->pp)) {
       lbs->pp = pp->next;
       *pp->target = uchannel_subchannel;
-      grpc_subchannel_del_interested_party(&exec_ctx, uchannel_subchannel,
-                                           pp->pollset);
       grpc_exec_ctx_enqueue(&exec_ctx, pp->on_complete, 1);
       gpr_free(pp);
     }
@@ -406,7 +404,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
 }
 
 typedef struct pick_to_stream {
-  grpc_subchannel *pick;
+  grpc_connected_subchannel *pick;
   lb_stream *lbs;
   struct pick_to_stream *prev;
   struct pick_to_stream *next;
@@ -427,7 +425,7 @@ static void pts_destroy(pick_to_stream *pts) {
   }
 }
 
-static void pts_add(pick_to_stream **pts, grpc_subchannel *pick,
+static void pts_add(pick_to_stream **pts, grpc_connected_subchannel *pick,
                     lb_stream *lbs) {
   pick_to_stream *node = gpr_malloc(sizeof(pick_to_stream));
   node->prev = NULL;
@@ -437,7 +435,7 @@ static void pts_add(pick_to_stream **pts, grpc_subchannel *pick,
   *pts = node;
 }
 
-static lb_stream *pts_find(pick_to_stream *pts, grpc_subchannel *pick) {
+static lb_stream *pts_find(pick_to_stream *pts, grpc_connected_subchannel *pick) {
   pick_to_stream *node = pts;
   while (node != NULL) {
     if (node->pick == pick) {
@@ -448,7 +446,7 @@ static lb_stream *pts_find(pick_to_stream *pts, grpc_subchannel *pick) {
   return NULL;
 }
 
-static lb_stream *pts_pop(pick_to_stream **pts, grpc_subchannel *pick) {
+static lb_stream *pts_pop(pick_to_stream **pts, grpc_connected_subchannel *pick) {
   pick_to_stream *node = *pts;
   while (node != NULL) {
     if (node->pick == pick) {
@@ -465,7 +463,7 @@ static lb_stream *pts_pop(pick_to_stream **pts, grpc_subchannel *pick) {
 
 typedef struct pf_pick_arg {
   pending_pick *pending_picks;
-  grpc_subchannel *pick;
+  grpc_connected_subchannel *pick;
   grpc_subchannel_factory *subchannel_factory;
   pick_to_stream *pts;
 } pf_pick_arg;
@@ -483,7 +481,7 @@ static pf_pick_arg *pfpa_create(pending_pick *pp,
 
 typedef struct on_complete_arg {
   pick_to_stream *pts;
-  grpc_subchannel *pick;
+  grpc_connected_subchannel *pick;
 } on_complete_arg;
 
 static void on_complete_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
@@ -511,7 +509,7 @@ typedef struct {
   pending_pick *pending_picks;
 
   grpc_lb_policy *pick_first;
-  grpc_subchannel *pf_pick; /* the subchannel picked by pick_fist */
+  grpc_connected_subchannel *pf_pick; /* the subchannel picked by pick_fist */
   grpc_closure pf_pick_cb;  /* invoked for all pf action */
   grpc_connectivity_state pf_conn_state;
   grpc_closure pf_conn_state_changed_cb;
@@ -562,7 +560,6 @@ void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   p->shutdown = 1;
   pp = p->pending_picks;
   p->pending_picks = NULL;
-  grpc_lb_policy_shutdown(exec_ctx, p->pick_first);
   gpr_mu_unlock(&p->mu);
   while (pp != NULL) {
     pending_pick *next = pp->next;
@@ -574,7 +571,7 @@ void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                            grpc_subchannel **target) {
+                            grpc_connected_subchannel **target) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
   grpc_lb_policy_cancel_pick(exec_ctx, p->pick_first, target);
@@ -591,7 +588,7 @@ void glb_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
 static void add_pending_pick(pending_pick **root, grpc_pollset *pollset,
                              grpc_metadata_batch *initial_metadata,
-                             grpc_subchannel **target,
+                             grpc_connected_subchannel **target,
                              grpc_closure *on_complete) {
   pending_pick *pp = gpr_malloc(sizeof(*pp));
   pp->next = *root;
@@ -604,7 +601,7 @@ static void add_pending_pick(pending_pick **root, grpc_pollset *pollset,
 
 int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
              grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
-             grpc_subchannel **target, grpc_closure *on_complete) {
+             grpc_connected_subchannel **target, grpc_closure *on_complete) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
 
@@ -621,7 +618,7 @@ int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   return 0; /* picking is always delayed */
 }
 
-static void glb_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+/*static void glb_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                           grpc_transport_op *op) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   pick_to_stream *pts_node;
@@ -632,7 +629,7 @@ static void glb_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     lbs_broadcast(exec_ctx, pts_node->lbs, op);
     pts_node = pts_node->next;
   }
-}
+}*/
 
 static grpc_connectivity_state glb_check_connectivity(grpc_exec_ctx *exec_ctx,
                                                       grpc_lb_policy *pol) {
@@ -643,6 +640,23 @@ static grpc_connectivity_state glb_check_connectivity(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&p->mu);
   return st;
 }
+
+static void glb_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                        grpc_closure *closure) {
+  /*round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
+  ready_list *selected;
+  grpc_connected_subchannel *target;
+  gpr_mu_lock(&p->mu);
+  if ((selected = peek_next_connected_locked(p))) {
+    gpr_mu_unlock(&p->mu);
+    target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
+    grpc_connected_subchannel_ping(exec_ctx, target, closure);
+  } else {
+    gpr_mu_unlock(&p->mu);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
+  }*/
+}
+
 
 void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                 grpc_connectivity_state *current,
@@ -655,8 +669,8 @@ void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
-    glb_destroy, glb_shutdown, glb_pick, glb_cancel_pick, glb_exit_idle,
-    glb_broadcast, glb_check_connectivity, glb_notify_on_state_change};
+    glb_destroy, glb_shutdown, glb_pick, glb_cancel_pick, glb_ping_one, glb_exit_idle,
+    glb_check_connectivity, glb_notify_on_state_change};
 
 static void glb_factory_ref(grpc_lb_policy_factory *factory) {}
 

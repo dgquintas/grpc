@@ -209,8 +209,7 @@ void grpc_client_uchannel_watch_connectivity_state(
   gpr_mu_unlock(&chand->mu_state);
 }
 
-grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
-                                          grpc_channel_args *args) {
+grpc_channel *grpc_client_uchannel_create(grpc_channel_args *args) {
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
@@ -242,14 +241,15 @@ void grpc_client_uchannel_set_connected_subchannel(
   gpr_mu_unlock(&chand->mu_state);
 }
 
-grpc_subchannel *grpc_client_uchannel_get_subchannel(grpc_channel *uchannel) {
-  grpc_subchannel *sc;
+grpc_connected_subchannel *grpc_client_uchannel_get_connected_subchannel(
+    grpc_channel *uchannel) {
+  grpc_connected_subchannel *sc;
   grpc_channel_element *elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(uchannel));
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
   gpr_mu_lock(&chand->mu_state);
-  sc = chand->subchannel;
+  sc = chand->connected_subchannel;
   gpr_mu_unlock(&chand->mu_state);
   return sc;
 }
