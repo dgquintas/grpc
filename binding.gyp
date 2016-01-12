@@ -263,7 +263,7 @@
         'src/core/json/json_reader.c',
         'src/core/json/json_string.c',
         'src/core/json/json_writer.c',
-        'src/core/proto/load_balancer.pb.c',
+        'src/core/proto/grpc/lb/v0/load_balancer.pb.c',
         'src/core/surface/api_trace.c',
         'src/core/surface/byte_buffer.c',
         'src/core/surface/byte_buffer_reader.c',

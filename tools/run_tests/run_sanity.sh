@@ -61,4 +61,4 @@ fi
 ./tools/buildgen/generate_projects.sh
 ./tools/distrib/check_copyright.py
 ./tools/distrib/clang_format_code.sh
-
+./tools/distrib/check_nanopb_output.sh

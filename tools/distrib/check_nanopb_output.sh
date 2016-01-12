@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 2015, Google Inc.
+#!/bin/bash
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,21 +28,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Regenerates gRPC service stubs from proto files.
-set +e
+set -ex
+
+readonly NANOPB_TMP_OUTPUT=$(mktemp -d)
+readonly VENV_DIR=$(mktemp -d)
+# create a virtualenv for nanopb's compiler
+pushd $VENV_DIR
+readonly VENV_NAME="nanopb-$(date '+%Y%m%d_%H%M%S_%N')"
+virtualenv $VENV_NAME
+. $VENV_NAME/bin/activate
+popd
+
+# install proto3
+pip install protobuf==3.0.0b2
+
+# change to root directory
 cd $(dirname $0)/../..
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=src/csharp/Grpc.Examples
-HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
-TESTING_DIR=src/csharp/Grpc.IntegrationTesting
+# stack up and change to nanopb's proto generator directory
+pushd third_party/nanopb/generator/proto
+make
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
-    -I src/proto/math src/proto/math/math.proto
+# back to the root directory
+popd
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
+# nanopb-compile the proto to a temp location
+./tools/codegen/core/gen_load_balancing_proto.sh \
+  src/proto/grpc/lb/v0/load_balancer.proto \
+  $NANOPB_TMP_OUTPUT
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{empty,messages,test}.proto test/proto/benchmarks/*.proto
+# compare outputs to checked compiled code
+diff -rq $NANOPB_TMP_OUTPUT src/core/proto/grpc/lb/v0
+if [ $? != 0 ]; then
+  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs src/core/proto/grpc/lb/v0"
+  exit 1
+fi
+deactivate

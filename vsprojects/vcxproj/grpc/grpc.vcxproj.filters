@@ -304,8 +304,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\proto\load_balancer.pb.c">
-      <Filter>src\core\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.c">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
@@ -764,8 +764,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\proto\load_balancer.pb.h">
-      <Filter>src\core\proto</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\proto\grpc\lb\v0\load_balancer.pb.h">
+      <Filter>src\core\proto\grpc\lb\v0</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
@@ -952,6 +952,15 @@
     </Filter>
     <Filter Include="src\core\proto">
       <UniqueIdentifier>{1ff04466-0905-8a5d-d6f4-7ff2df4c13b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc">
+      <UniqueIdentifier>{7c7ad0b3-bf85-5bd3-e0c8-4f5468a8e2e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb">
+      <UniqueIdentifier>{3d533dad-8100-e8a3-b7c3-1fc13a4d60da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\proto\grpc\lb\v0">
+      <UniqueIdentifier>{0ffcf868-7617-5fed-b6ce-2162d9d09148}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
