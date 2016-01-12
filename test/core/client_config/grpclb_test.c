@@ -65,7 +65,7 @@ static gpr_timespec n_seconds_time(int n) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_slice build_response_payload_slice() {
   return gpr_slice_from_copied_string(
@@ -135,7 +135,7 @@ void start_server(lb_server_fixture *sf) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "waiting at fake lb server");
     ev = grpc_completion_queue_next(sf->cq, deadline, NULL);
-    read_tag = ((int)(gpr_intptr)ev.tag);
+    read_tag = ((int)(intptr_t)ev.tag);
     gpr_log(GPR_DEBUG, "AT FAKE SERVER A: EVENT: success:%d, type:%d, tag:%d",
             ev.success, ev.type, read_tag);
 
@@ -250,7 +250,7 @@ void perform_request(grpc_channel *client) {
   gpr_log(GPR_INFO, "waiting for whatever at client");
   ev = grpc_completion_queue_next(cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1000),
                                   NULL);
-  read_tag = ((int)(gpr_intptr)ev.tag);
+  read_tag = ((int)(intptr_t)ev.tag);
   gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d", ev.success, ev.type,
           read_tag);
 
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
 
   sf = setup_lb_server("127.0.0.1");
   gpr_thd_new(&tid, fork_server, sf, &options);
-  gpr_asprintf(&client_hostport, "ipv4:127.0.0.1:%d?lb_policy=glb", sf->port);
+  gpr_asprintf(&client_hostport, "ipv4:127.0.0.1:%d?lb_policy=grpclb", sf->port);
   client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
   perform_request(client);
   grpc_channel_destroy(client);

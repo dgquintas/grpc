@@ -142,6 +142,7 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   return grpc_lb_policy_create("round_robin", &rr_policy_args);
 }
 
+/* data for communicating with a LB server */
 typedef struct lb_stream {
   gpr_mu mu;
   int shutdown;
@@ -216,10 +217,10 @@ static grpc_channel *uchannel_create(grpc_connected_subchannel *sc,
 }
 
 static void *tag(intptr_t t) { return (void *)t; }
-/* XXX former probe_for_lb_service */
+
 static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
-  const char *service_name = "service_name";
-  const char *service_host = "localhost";
+  const char *service_name = "service_name"; /* FIXME */
+  const char *service_host = "localhost";  /* FIXME */
   const gpr_timespec service_deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   grpc_channel *uchannel = uchannel_create(lbs->pick, service_name);
 
@@ -288,9 +289,6 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
     const grpc_grpclb_request *request = grpc_grpclb_request_create(service_name);
     grpc_grpclb_response *response;
     gpr_slice encoded_request;
-
-    gpr_mu_lock(&lbs->mu);
-    gpr_mu_unlock(&lbs->mu);
 
     encoded_request = grpc_grpclb_request_encode(request);
     request_payload = grpc_raw_byte_buffer_create(&encoded_request, 1);
@@ -403,6 +401,7 @@ static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
   grpc_completion_queue_destroy(cq);
 }
 
+/* maps subchannels chosen by the pick_first policy to LB streams */
 typedef struct pick_to_stream {
   grpc_connected_subchannel *pick;
   lb_stream *lbs;
@@ -461,24 +460,6 @@ static lb_stream *pts_pop(pick_to_stream **pts, grpc_connected_subchannel *pick)
   return NULL;
 }
 
-typedef struct pf_pick_arg {
-  pending_pick *pending_picks;
-  grpc_connected_subchannel *pick;
-  grpc_subchannel_factory *subchannel_factory;
-  pick_to_stream *pts;
-} pf_pick_arg;
-
-static pf_pick_arg *pfpa_create(pending_pick *pp,
-                                grpc_subchannel_factory *subchannel_factory,
-                                pick_to_stream *pts) {
-  pf_pick_arg *pfpa = gpr_malloc(sizeof(pf_pick_arg));
-  memset(pfpa, 0, sizeof(pf_pick_arg));
-  pfpa->pending_picks = pp;
-  pfpa->subchannel_factory = subchannel_factory;
-  pfpa->pts = pts;
-  return pfpa;
-}
-
 typedef struct on_complete_arg {
   pick_to_stream *pts;
   grpc_connected_subchannel *pick;
@@ -518,29 +499,36 @@ typedef struct {
   grpc_subchannel_factory *subchannel_factory;
 } glb_lb_policy;
 
-static void pf_pick(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
-  pf_pick_arg *pfpa = arg;
+/* invoked by the pick_first policy */
+static void pf_pick_cb(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
+  glb_lb_policy *p = arg;
   lb_stream *lbs;
   on_complete_arg *oc_arg;
   grpc_closure *on_complete;
 
-  if (pfpa->pick == NULL) {
+  if (p->pf_pick == NULL) {
     return;
   }
-  lbs = pts_find(pfpa->pts, pfpa->pick);
+  /* get the LB stream associated to the pick, if any */
+  lbs = pts_find(p->pts, p->pf_pick);
+
+  /* if there's no LB stream associated with the pick, create a new one */
   if (lbs == NULL) {
-    lbs = lbs_create(pfpa->pick,
-                     pfpa->pending_picks, /* freed by pfpa->on_complete */
-                     pfpa->subchannel_factory);
-    pts_add(&pfpa->pts, pfpa->pick, lbs);
+    lbs = lbs_create(p->pf_pick,
+                     p->pending_picks,
+                     p->subchannel_factory);
+    /* record the pick-LBstream mapping */
+    pts_add(&p->pts, p->pf_pick, lbs);
   }
   GPR_ASSERT(lbs != NULL);
 
   oc_arg = gpr_malloc(sizeof(on_complete_arg));
-  oc_arg->pts = pfpa->pts;
-  oc_arg->pick = pfpa->pick;
+  oc_arg->pts = p->pts;
+  oc_arg->pick = p->pf_pick;
+  /* will remove the pick-stream mapping and destroy the stream */
   on_complete = grpc_closure_create(on_complete_cb, oc_arg);
 
+  /* will probe for an LB server */
   lbs_next(lbs, on_complete);
 }
 
@@ -613,23 +601,11 @@ int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
   /* get the first input subchannel that connects into p->pf_pick */
   grpc_lb_policy_pick(exec_ctx, p->pick_first, pollset, initial_metadata,
-                      &p->pf_pick /* target */, &p->pf_pick_cb);
+                      &p->pf_pick /* target */,
+                      &p->pf_pick_cb /* pf_pick_cb(pfpa) */);
   gpr_mu_unlock(&p->mu);
   return 0; /* picking is always delayed */
 }
-
-/*static void glb_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                          grpc_transport_op *op) {
-  glb_lb_policy *p = (glb_lb_policy *)pol;
-  pick_to_stream *pts_node;
-  GPR_ASSERT(p->pick_first);
-  grpc_lb_policy_broadcast(exec_ctx, p->pick_first, op);
-  pts_node = p->pts;
-  while (pts_node != NULL) {
-    lbs_broadcast(exec_ctx, pts_node->lbs, op);
-    pts_node = pts_node->next;
-  }
-}*/
 
 static grpc_connectivity_state glb_check_connectivity(grpc_exec_ctx *exec_ctx,
                                                       grpc_lb_policy *pol) {
@@ -643,20 +619,16 @@ static grpc_connectivity_state glb_check_connectivity(grpc_exec_ctx *exec_ctx,
 
 static void glb_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                         grpc_closure *closure) {
-  /*round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
-  ready_list *selected;
-  grpc_connected_subchannel *target;
-  gpr_mu_lock(&p->mu);
-  if ((selected = peek_next_connected_locked(p))) {
-    gpr_mu_unlock(&p->mu);
-    target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
-    grpc_connected_subchannel_ping(exec_ctx, target, closure);
-  } else {
-    gpr_mu_unlock(&p->mu);
-    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
-  }*/
-}
+  glb_lb_policy *p = (glb_lb_policy *)pol;
 
+  /* get the LB stream for the current pick */
+  lb_stream *lbs = pts_find(p->pts, p->pf_pick);
+  if (lbs == NULL) { /* not an LB server */
+    grpc_lb_policy_ping_one(exec_ctx, p->pick_first, closure);
+  } else { /* ping over the round robin from the LB server */
+    grpc_lb_policy_ping_one(exec_ctx, lbs->rr, closure);
+  }
+}
 
 void glb_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                 grpc_connectivity_state *current,
@@ -680,7 +652,6 @@ static grpc_lb_policy *glb_create(grpc_lb_policy_factory *factory,
                                   grpc_lb_policy_args *args) {
   grpc_lb_policy_args pf_args;
   glb_lb_policy *p = gpr_malloc(sizeof(*p));
-  pf_pick_arg *pfpa;
   GPR_ASSERT(args->num_subchannels > 0);
   memset(p, 0, sizeof(*p));
   grpc_lb_policy_init(&p->base, &glb_lb_policy_vtable);
@@ -703,15 +674,14 @@ static grpc_lb_policy *glb_create(grpc_lb_policy_factory *factory,
   GPR_ASSERT(args->subchannel_factory != NULL);
   p->subchannel_factory = args->subchannel_factory;
 
-  pfpa = pfpa_create(p->pending_picks, p->subchannel_factory, p->pts);
-  grpc_closure_init(&p->pf_pick_cb, pf_pick, pfpa);
+  grpc_closure_init(&p->pf_pick_cb, pf_pick_cb, p);
 
   gpr_mu_init(&p->mu);
   return &p->base;
 }
 
 static const grpc_lb_policy_factory_vtable glb_factory_vtable = {
-    glb_factory_ref, glb_factory_unref, glb_create, "glb"};
+    glb_factory_ref, glb_factory_unref, glb_create, "grpclb"};
 
 static grpc_lb_policy_factory glb_lb_policy_factory = {&glb_factory_vtable};
 
