@@ -278,7 +278,7 @@ static grpc_resolver *sockaddr_create(
 
     bool lb_enabled;
     gpr_slice_split(query_slice, "&", &query_parts);
-    for (i = 0; i < query_parts.count; i++) {
+    for (size_t i = 0; i < query_parts.count; i++) {
       gpr_slice_split(query_parts.slices[i], "=", &query_param_parts);
       GPR_ASSERT(query_param_parts.count == 2);
       if (0 == gpr_slice_str_cmp(query_param_parts.slices[0], "lb_policy")) {
