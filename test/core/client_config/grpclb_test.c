@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,11 +42,11 @@
 #include <grpc/support/time.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/surface/channel.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/server.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -67,6 +67,7 @@ static gpr_timespec n_seconds_time(int n) {
 
 static void *tag(intptr_t t) { return (void *)t; }
 
+#if 0
 static gpr_slice build_response_payload_slice() {
   /*
   server_list {
@@ -87,18 +88,40 @@ static gpr_slice build_response_payload_slice() {
       "\x1a\x06\x74\x6f\x6b\x65\x6e\x31\x0a\x16\x0a\x09\x31\x32\x37\x2e\x30\x2e"
       "\x30\x2e\x32\x10\xe1\x21\x1a\x06\x74\x6f\x6b\x65\x6e\x32");
 }
+#endif
+
+static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static void shutdown_server(lb_server_fixture *sf) {
+  if (!sf->server) return;
+  grpc_server_shutdown_and_notify(sf->server, sf->cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 sf->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
+  grpc_server_destroy(sf->server);
+  sf->server = NULL;
+}
+
+static void drain_cq(grpc_completion_queue *cq) {
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+}
+
 
 void start_server(lb_server_fixture *sf) {
   grpc_call *s;
+  cq_verifier *cqv = cq_verifier_create(sf->cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_call_error error;
   int was_cancelled = 2;
-  cq_verifier *cqv = cq_verifier_create(sf->cq);
-  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  grpc_event ev;
+  grpc_byte_buffer *request_payload_recv;
+  grpc_byte_buffer *response_payload;
+  int i;
+  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
@@ -107,11 +130,10 @@ void start_server(lb_server_fixture *sf) {
       grpc_server_request_call(sf->server, &s, &call_details,
                                &request_metadata_recv, sf->cq, sf->cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  ev = grpc_completion_queue_next(sf->cq, deadline, NULL);
-  GPR_ASSERT(ev.tag == tag(100));
-
-  /*cq_expect_completion(cqv, tag(100), 1);
-  cq_verify(cqv);*/
+  gpr_log(GPR_INFO, "Server up!");
+  cq_expect_completion(cqv, tag(100), 1);
+  cq_verify(cqv);
+  gpr_log(GPR_INFO, "Server after tag 100");
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -126,12 +148,9 @@ void start_server(lb_server_fixture *sf) {
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
+  gpr_log(GPR_INFO, "Server after tag 101");
 
-  while (sf->shutdown == 0) {
-    int read_tag;
-    grpc_byte_buffer *request_payload_recv;
-    grpc_byte_buffer *response_payload;
-    gpr_slice response_payload_slice = build_response_payload_slice();
+  for (i = 0; i < 4; i++) {
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
     op = ops;
@@ -142,12 +161,9 @@ void start_server(lb_server_fixture *sf) {
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    gpr_log(GPR_INFO, "waiting at fake lb server");
-    ev = grpc_completion_queue_next(sf->cq, deadline, NULL);
-    read_tag = ((int)(intptr_t)ev.tag);
-    gpr_log(GPR_DEBUG, "AT FAKE SERVER A: EVENT: success:%d, type:%d, tag:%d",
-            ev.success, ev.type, read_tag);
-    GPR_ASSERT(ev.tag == tag(102));
+    cq_expect_completion(cqv, tag(102), 1);
+    cq_verify(cqv);
+    gpr_log(GPR_INFO, "Server after tag 102, iter %d", i);
 
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
@@ -157,18 +173,15 @@ void start_server(lb_server_fixture *sf) {
     op++;
     error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    ev = grpc_completion_queue_next(sf->cq, deadline, NULL);
-    GPR_ASSERT(ev.tag == tag(103));
-    gpr_log(GPR_DEBUG, "AT FAKE SERVER B: EVENT: success:%d, type:%d, tag:%d",
-            ev.success, ev.type, read_tag);
+    cq_expect_completion(cqv, tag(103), 1);
+    cq_verify(cqv);
+    gpr_log(GPR_INFO, "Server after tag 103, iter %d", i);
 
     grpc_byte_buffer_destroy(response_payload);
     grpc_byte_buffer_destroy(request_payload_recv);
-    gpr_slice_unref(response_payload_slice);
-
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                             gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
+
+  gpr_slice_unref(response_payload_slice);
 
   op = ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -181,9 +194,9 @@ void start_server(lb_server_fixture *sf) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  /*cq_expect_completion(cqv, tag(101), 1);
+  cq_expect_completion(cqv, tag(101), 1);
   cq_expect_completion(cqv, tag(104), 1);
-  cq_verify(cqv);*/
+  cq_verify(cqv);
 
   grpc_call_destroy(s);
 
@@ -191,6 +204,12 @@ void start_server(lb_server_fixture *sf) {
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
+
+  shutdown_server(sf);
+
+  grpc_completion_queue_shutdown(sf->cq);
+  drain_cq(sf->cq);
+  grpc_completion_queue_destroy(sf->cq);
 }
 
 void fork_server(void *arg) {
@@ -198,40 +217,40 @@ void fork_server(void *arg) {
   start_server(sf);
 }
 
+static void shutdown_client(grpc_channel *client) {
+  if (!client) return;
+  grpc_channel_destroy(client);
+  client = NULL;
+}
 void perform_request(grpc_channel *client) {
   grpc_call *c;
-  gpr_timespec deadline;
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  gpr_timespec deadline = five_seconds_time();
+  cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
   grpc_op *op;
-  grpc_status_code status;
-  char *details;
-  size_t details_capacity;
-  grpc_event ev;
-  int read_tag;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_status_code status;
+  grpc_call_error error;
+  char *details = NULL;
+  size_t details_capacity = 0;
+  grpc_byte_buffer *request_payload;
+  grpc_byte_buffer *response_payload_recv;
+  int i;
+  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
 
-  /* Send a trivial request. */
-  deadline = n_seconds_time(60);
-
-  details = NULL;
-  details_capacity = 0;
+  c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                               "/foo", "foo.test.google.fr:1234", deadline,
+                               NULL);
+  GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
-  GPR_ASSERT(c);
-
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -248,32 +267,69 @@ void perform_request(grpc_channel *client) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
-  gpr_log(GPR_INFO, "waiting for whatever at client");
-  ev = grpc_completion_queue_next(cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1000),
-                                  NULL);
-  read_tag = ((int)(intptr_t)ev.tag);
-  gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d", ev.success, ev.type,
-          read_tag);
+  for (i = 0; i < 4; i++) {
+    request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
+    op = ops;
+    op->op = GRPC_OP_SEND_MESSAGE;
+    op->data.send_message = request_payload;
+    op->flags = 0;
+    op->reserved = NULL;
+    op++;
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message = &response_payload_recv;
+    op->flags = 0;
+    op->reserved = NULL;
+    op++;
+    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cq_expect_completion(cqv, tag(2), 1);
+    cq_verify(cqv);
+    gpr_log(GPR_INFO, "Client after tag 2, iter %d", i);
+    gpr_log(GPR_INFO, "Client received payload: %s", response_payload_recv);
+
+    grpc_byte_buffer_destroy(request_payload);
+    grpc_byte_buffer_destroy(response_payload_recv);
+  }
+
+  gpr_slice_unref(request_payload_slice);
+
+  op = ops;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_expect_completion(cqv, tag(3), 1);
+  cq_verify(cqv);
+  gpr_log(GPR_INFO, "Client after tag 1");
+  gpr_log(GPR_INFO, "Client after tag 3");
 
   grpc_call_destroy(c);
 
+  cq_verifier_destroy(cqv);
+
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_free(details);
+
+  shutdown_client(client);
+  grpc_completion_queue_shutdown(cq);
+  drain_cq(cq);
+  grpc_completion_queue_destroy(cq);
 }
 
 static lb_server_fixture *setup_lb_server(const char *server_host) {
   lb_server_fixture *f = gpr_malloc(sizeof(lb_server_fixture));
   int got_port;
-  const size_t num_servers = 1;
 
-  f->request_metadata_recv =
-      gpr_malloc(sizeof(grpc_metadata_array) * num_servers);
-  /* Create servers. */
   f->cq = grpc_completion_queue_create(NULL);
   f->port = grpc_pick_unused_port_or_die();
 
@@ -304,13 +360,13 @@ int main(int argc, char **argv) {
   sf = setup_lb_server("127.0.0.1");
   gpr_thd_new(&tid, fork_server, sf, &options);
   gpr_asprintf(&client_hostport,
-               "ipv4:127.0.0.1:%d?lb_policy=grpclb&lb_enabled=1", sf->port);
+               "ipv4:127.0.0.1:%d", sf->port);
   client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
   perform_request(client);
-  grpc_channel_destroy(client);
 
   sf->shutdown = 1;
   gpr_thd_join(tid);
+  gpr_free(sf->servers_hostport);
   gpr_free(sf);
   gpr_free(client_hostport);
   grpc_shutdown();
