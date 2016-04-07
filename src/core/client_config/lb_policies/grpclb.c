@@ -31,11 +31,11 @@
  *
  */
 
-#include "src/core/client_config/lb_policy_factory.h"
-#include "src/core/client_config/lb_policies/grpclb.h"
-#include "src/core/client_config/lb_policies/load_balancer_api.h"
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/lb_policy_factory.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/lb_policy/grpclb/grpclb.h"
+#include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 
 #include <string.h>
 
@@ -101,7 +101,7 @@ done:
 
 static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
                                  grpc_grpclb_serverlist *serverlist,
-                                 grpc_subchannel_factory *sc_factory) {
+                                 grpc_client_channel_factory *sc_factory) {
   grpc_subchannel **subchannels;
   size_t num_addrs = serverlist->num_servers;
   struct sockaddr_storage *addrs =
@@ -142,143 +142,6 @@ static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
   return grpc_lb_policy_create("round_robin", &rr_policy_args);
 }
 
-/* data for communicating with a LB server */
-typedef struct lb_stream {
-  gpr_mu mu;
-  int shutdown;
-  grpc_connected_subchannel *pick;
-  grpc_lb_policy *rr;
-  pending_pick *pp;
-  grpc_subchannel_factory *subchannel_factory;
-  grpc_grpclb_serverlist *serverlist;
-} lb_stream;
-
-static lb_stream *lb_stream_create(grpc_connected_subchannel *pick,
-                             pending_pick *pending_picks,
-                             grpc_subchannel_factory *subchannel_factory) {
-  lb_stream *lbs = gpr_malloc(sizeof(lb_stream));
-  memset(lbs, 0, sizeof(lb_stream));
-  gpr_mu_init(&lbs->mu);
-  lbs->pick = pick;
-  lbs->pp = pending_picks;
-  lbs->subchannel_factory = subchannel_factory;
-  return lbs;
-}
-
-static void lb_stream_shutdown(lb_stream *lbs) {
-  gpr_mu_lock(&lbs->mu);
-  lbs->shutdown = 1;
-  gpr_mu_unlock(&lbs->mu);
-}
-
-static void lb_stream_destroy(lb_stream *lbs) {
-  GPR_ASSERT(lbs->pp == NULL);
-  gpr_mu_destroy(&lbs->mu);
-}
-
-static void process_lb_response(grpc_exec_ctx *exec_ctx, void *arg,
-                                  int iomgr_success) {
-  /* XXX */
-  pending_pick *pp;
-  lb_stream *lbs = arg;
-  GPR_ASSERT(lbs->subchannel_factory != NULL);
-  if (lbs->serverlist != NULL) {
-    lbs->rr = create_rr(exec_ctx, lbs->serverlist, lbs->subchannel_factory);
-    GPR_ASSERT(lbs->rr != NULL);
-    while ((pp = lbs->pp) != NULL) {
-      grpc_lb_policy_pick(exec_ctx, lbs->rr, pp->pollset, pp->initial_metadata,
-                          pp->target, pp->on_complete);
-      lbs->pp = lbs->pp->next;
-    }
-  } else {
-    lbs->rr = NULL;
-  }
-}
-
-
-/*static void lbs_broadcast(grpc_exec_ctx *exec_ctx, lb_stream *lbs,
-                          grpc_transport_op *op) {
-  if (lbs->rr != NULL) {
-    grpc_lb_policy_broadcast(exec_ctx, lbs->rr, op);
-  }
-}*/
-
-static void lbs_next(lb_stream *lbs, grpc_closure *on_complete) {
-
-}
-
-/* maps subchannels chosen by the pick_first policy to LB streams */
-typedef struct pick_to_stream {
-  grpc_connected_subchannel *pick;
-  lb_stream *lbs;
-  struct pick_to_stream *prev;
-  struct pick_to_stream *next;
-} pick_to_stream;
-
-static pick_to_stream *pts_create() {
-  pick_to_stream *pts = gpr_malloc(sizeof(pick_to_stream));
-  memset(pts, 0, sizeof(pick_to_stream));
-  return pts;
-}
-
-static void pts_destroy(pick_to_stream *pts) {
-  pick_to_stream *node = pts;
-  while (node != NULL) {
-    pick_to_stream *next = node->next;
-    gpr_free(node);
-    node = next;
-  }
-}
-
-static void pts_add(pick_to_stream **pts, grpc_connected_subchannel *pick,
-                    lb_stream *lbs) {
-  pick_to_stream *node = gpr_malloc(sizeof(pick_to_stream));
-  node->prev = NULL;
-  node->next = *pts;
-  node->pick = pick;
-  node->lbs = lbs;
-  *pts = node;
-}
-
-static lb_stream *pts_find(pick_to_stream *pts, grpc_connected_subchannel *pick) {
-  pick_to_stream *node = pts;
-  while (node != NULL) {
-    if (node->pick == pick) {
-      return node->lbs;
-    }
-    node = node->next;
-  }
-  return NULL;
-}
-
-static lb_stream *pts_pop(pick_to_stream **pts, grpc_connected_subchannel *pick) {
-  pick_to_stream *node = *pts;
-  while (node != NULL) {
-    if (node->pick == pick) {
-      lb_stream *res = node->lbs;
-      if (node->prev != NULL) node->prev = node->next;
-      if (node->next != NULL) node->next->prev = node->prev;
-      gpr_free(node);
-      return res;
-    }
-    node = node->next;
-  }
-  return NULL;
-}
-
-typedef struct on_complete_arg {
-  pick_to_stream *pts;
-  grpc_connected_subchannel *pick;
-} on_complete_arg;
-
-static void on_complete_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
-  on_complete_arg *oca = arg;
-  lb_stream *lbs = pts_pop(&oca->pts, oca->pick);
-  GPR_ASSERT(lbs != NULL);
-  lb_stream_destroy(lbs);
-  gpr_free(lbs);
-}
-
 typedef struct {
   /** base policy: must be first */
   grpc_lb_policy base;
@@ -301,49 +164,15 @@ typedef struct {
   grpc_connectivity_state pf_conn_state;
   grpc_closure pf_conn_state_changed_cb;
 
-  pick_to_stream *pts;
-  grpc_subchannel_factory *subchannel_factory;
+  grpc_client_channel_factory *client_channel_factory;
 } glb_lb_policy;
 
-/* invoked by the pick_first policy */
-static void pf_pick_cb(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
-  glb_lb_policy *p = arg;
-  lb_stream *lbs;
-  on_complete_arg *oc_arg;
-  grpc_closure *on_complete;
-
-  if (p->pf_pick == NULL) {
-    return;
-  }
-  /* get the LB stream associated to the pick, if any */
-  lbs = pts_find(p->pts, p->pf_pick);
-
-  /* if there's no LB stream associated with the pick, create a new one */
-  if (lbs == NULL) {
-    lbs = lb_stream_create(p->pf_pick,
-                     p->pending_picks,
-                     p->subchannel_factory);
-    /* record the pick-LBstream mapping */
-    pts_add(&p->pts, p->pf_pick, lbs);
-  }
-  GPR_ASSERT(lbs != NULL);
-
-  oc_arg = gpr_malloc(sizeof(on_complete_arg));
-  oc_arg->pts = p->pts;
-  oc_arg->pick = p->pf_pick;
-  /* will remove the pick-stream mapping and destroy the stream */
-  on_complete = grpc_closure_create(on_complete_cb, oc_arg);
-
-  /* will probe for an LB server */
-  lbs_next(lbs, on_complete);
-}
 
 void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   GRPC_LB_POLICY_UNREF(exec_ctx, p->pick_first, "glb_destroy");
   GPR_ASSERT(p->pending_picks == NULL);
   gpr_mu_destroy(&p->mu);
-  pts_destroy(p->pts);
   gpr_free(p);
 }
 
