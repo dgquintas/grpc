@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  *
  * Copyright 2015, Google Inc.
@@ -31,19 +32,23 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_ALPN_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_ALPN_H
+/**
+ * This file is required because package.json cannot reference a file that
+ * is not distributed with the package, and we use node-pre-gyp to distribute
+ * the protoc binary
+ */
 
-#include <string.h>
+'use strict';
 
-/* Retuns 1 if the version is supported, 0 otherwise. */
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size);
+var path = require('path');
+var execFile = require('child_process').execFile;
 
-/* Returns the number of protocol versions to advertise */
-size_t grpc_chttp2_num_alpn_versions(void);
+var protoc = path.resolve(__dirname, 'protoc');
 
-/* Returns the protocol version at index i (0 <= i <
- * grpc_chttp2_num_alpn_versions()) */
-const char *grpc_chttp2_get_alpn_version_index(size_t i);
-
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_ALPN_H */
+execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
+  if (error) {
+    throw error;
+  }
+  console.log(stdout);
+  console.log(stderr);
+});

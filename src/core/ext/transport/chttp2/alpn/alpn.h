@@ -31,26 +31,19 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/alpn.h"
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
 
-/* in order of preference */
-static const char *const supported_versions[] = {"h2"};
+#include <string.h>
 
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
-  size_t i;
-  for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
-    if (!strncmp(version, supported_versions[i], size)) return 1;
-  }
-  return 0;
-}
+/* Retuns 1 if the version is supported, 0 otherwise. */
+int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size);
 
-size_t grpc_chttp2_num_alpn_versions(void) {
-  return GPR_ARRAY_SIZE(supported_versions);
-}
+/* Returns the number of protocol versions to advertise */
+size_t grpc_chttp2_num_alpn_versions(void);
 
-const char *grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
-  return supported_versions[i];
-}
+/* Returns the protocol version at index i (0 <= i <
+ * grpc_chttp2_num_alpn_versions()) */
+const char *grpc_chttp2_get_alpn_version_index(size_t i);
+
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H */
