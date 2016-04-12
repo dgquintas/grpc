@@ -494,6 +494,13 @@ filegroups:
   - grpc_base
   - grpc_client_config
   - nanopb
+- name: grpc_lb_policy_grpclb
+  src:
+  - src/core/ext/lb_policy/grpclb/grpclb.c
+  plugin: grpc_lb_policy_grpclb
+  uses:
+  - grpc_base
+  - grpc_client_config
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/lb_policy/pick_first/pick_first.c
@@ -715,6 +722,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_secure
@@ -792,6 +800,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false

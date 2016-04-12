@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,14 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_GLB_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_GLB_H
+#ifndef GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
+#define GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H
 
-#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/ext/client_config/lb_policy_factory.h"
 
 /** Returns a load balancing factory for the glb policy, which tries to connect
  * to a load balancing server to decide the next successfully connected
  * subchannel to pick. */
 grpc_lb_policy_factory *grpc_glb_lb_factory_create();
 
-#endif
+#endif /* GRPC_CORE_EXT_LB_POLICY_GRPCLB_GRPCLB_H */

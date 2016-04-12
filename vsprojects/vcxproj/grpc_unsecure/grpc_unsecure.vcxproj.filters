@@ -385,20 +385,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\grpclb.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
-      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
-      <Filter>third_party\nanopb</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
-      <Filter>third_party\nanopb</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
-      <Filter>third_party\nanopb</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
       <Filter>src\core\ext\lb_policy\pick_first</Filter>
@@ -848,24 +836,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
-      <Filter>src\core\ext\lb_policy\grpclb</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
-      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
-      <Filter>third_party\nanopb</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h">
-      <Filter>third_party\nanopb</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h">
-      <Filter>third_party\nanopb</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
-      <Filter>third_party\nanopb</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
@@ -919,18 +889,6 @@
     </Filter>
     <Filter Include="src\core\ext\lb_policy\grpclb">
       <UniqueIdentifier>{25a465c8-d1e8-6248-c005-bb2062206472}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto">
-      <UniqueIdentifier>{40fc2615-d244-0d36-4486-ba6f0fa468bb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc">
-      <UniqueIdentifier>{1d129f24-a399-12ef-68de-023aff7dde52}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb">
-      <UniqueIdentifier>{21858d9d-30b5-8847-5882-6b47df0fa293}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0">
-      <UniqueIdentifier>{1795a20b-3e7c-e27d-eae1-96582fa9a958}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\lb_policy\pick_first">
       <UniqueIdentifier>{e27f9ecf-97bb-1a2e-3135-a41f732dcf55}</UniqueIdentifier>
@@ -1003,12 +961,6 @@
     </Filter>
     <Filter Include="src\core\plugin_registry">
       <UniqueIdentifier>{babf0a90-e934-f599-5475-e6937d9580fe}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{025c051e-8eba-125b-67f9-173f95176eb2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\nanopb">
-      <UniqueIdentifier>{6511f77d-f28c-80e0-0889-8975e688e344}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
