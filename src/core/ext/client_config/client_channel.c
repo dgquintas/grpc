@@ -446,8 +446,10 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   gpr_mu_destroy(&chand->mu_config);
 }
 
-static void cc_set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_pollset *pollset) {
+static void cc_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                          grpc_call_element *elem,
+                                          grpc_pollset *pollset,
+                                          grpc_pollset_set *or_pollset_set) {
   call_data *calld = elem->call_data;
   calld->pollset = pollset;
 }
@@ -457,7 +459,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
     cc_start_transport_op,
     sizeof(call_data),
     init_call_elem,
-    cc_set_pollset,
+    cc_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
