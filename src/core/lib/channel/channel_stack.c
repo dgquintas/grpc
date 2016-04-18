@@ -197,7 +197,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(
   char *user_data;
   size_t i;
 
-  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
+  /*GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);*/
   call_elems = CALL_ELEMS_FROM_STACK(call_stack);
   user_data = ((char *)call_elems) +
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));

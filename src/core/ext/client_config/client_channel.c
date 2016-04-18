@@ -368,7 +368,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
     int r;
     GRPC_LB_POLICY_REF(lb_policy, "cc_pick_subchannel");
     gpr_mu_unlock(&chand->mu_config);
-    r = grpc_lb_policy_pick(exec_ctx, lb_policy, calld->pollset,
+    r = grpc_lb_policy_pick(exec_ctx, lb_policy, calld->pollset_set,
                             initial_metadata, initial_metadata_flags,
                             connected_subchannel, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "cc_pick_subchannel");
@@ -451,7 +451,11 @@ static void cc_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                           grpc_pollset *pollset,
                                           grpc_pollset_set *or_pollset_set) {
   call_data *calld = elem->call_data;
-  calld->pollset = pollset;
+  if (pollset != NULL) {
+    grpc_pollset_set_add_pollset(exec_ctx, calld->pollset_set, pollset);
+  } else if (or_pollset_set != NULL) {
+    grpc_pollset_set_add_pollset_set(exec_ctx, calld->pollset_set, or_pollset_set);
+  }
 }
 
 const grpc_channel_filter grpc_client_channel_filter = {
