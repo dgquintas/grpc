@@ -102,7 +102,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Request with a large amount of metadata.*/
+/* Simple request via a server filter that always closes the stream.*/
 static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -207,10 +207,7 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   call_data *calld = elem->call_data;
   if (success) {
     // close the stream with an error.
-    gpr_slice message;
-    grpc_transport_stream_op close_op;
-    memset(&close_op, 0, sizeof(close_op));
-    message =
+    gpr_slice message =
         gpr_slice_from_copied_string("Random failure that's not preventable.");
     grpc_transport_stream_op op;
     memset(&op, 0, sizeof(op));
