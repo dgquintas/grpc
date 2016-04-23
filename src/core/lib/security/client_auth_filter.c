@@ -270,8 +270,10 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   memset(calld, 0, sizeof(*calld));
 }
 
-static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                        grpc_pollset *pollset) {
+static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_call_element *elem,
+                                       grpc_pollset *pollset,
+                                       grpc_pollset_set *or_pollset_set) {
   call_data *calld = elem->call_data;
   calld->pollset = pollset;
 }
@@ -329,8 +331,14 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");
 }
 
-const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem,          set_pollset,          destroy_call_elem,
-    sizeof(channel_data),    init_channel_elem,    destroy_channel_elem,
-    grpc_call_next_get_peer, "client-auth"};
+const grpc_channel_filter grpc_client_auth_filter = {auth_start_transport_op,
+                                                     grpc_channel_next_op,
+                                                     sizeof(call_data),
+                                                     init_call_elem,
+                                                     set_pollset_or_pollset_set,
+                                                     destroy_call_elem,
+                                                     sizeof(channel_data),
+                                                     init_channel_elem,
+                                                     destroy_channel_elem,
+                                                     grpc_call_next_get_peer,
+                                                     "client-auth"};

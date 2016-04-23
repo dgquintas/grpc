@@ -109,6 +109,7 @@ END2END_TESTS = {
     'no_op': default_test_options,
     'payload': default_test_options._replace(cpu_cost=LOWCPU),
     'ping_pong_streaming': default_test_options,
+    'ping_pong_streaming_pollset_set': default_test_options,
     'ping': connectivity_test_options._replace(proxyable=False),
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(proxyable=False),

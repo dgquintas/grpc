@@ -14233,7 +14233,32 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "negative_deadline"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_proxy_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "windows", 
@@ -14322,28 +14347,6 @@
   {
     "args": [
       "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_cert_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15026,7 +15029,31 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "payload"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "windows", 
@@ -15048,27 +15075,6 @@
   {
     "args": [
       "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15821,6 +15827,7 @@
       "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
+      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -15829,8 +15836,9 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_uds_test", 
+    "name": "h2_census_nosec_test", 
     "platforms": [
+      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -16644,7 +16652,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_census_nosec_test", 
+    "name": "h2_compress_nosec_test", 
     "platforms": [
       "windows", 
       "linux", 
@@ -17468,28 +17476,6 @@
   }, 
   {
     "args": [
-      "ping_pong_streaming_pollset_set"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "registered_call"
     ], 
     "ci_platforms": [
@@ -17754,7 +17740,33 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "cancel_after_accept"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "windows", 
@@ -18304,28 +18316,6 @@
   }, 
   {
     "args": [
-      "ping_pong_streaming_pollset_set"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "registered_call"
     ], 
     "ci_platforms": [
@@ -18690,7 +18680,27 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "connectivity"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+pipe_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux"
@@ -18963,22 +18973,6 @@
   {
     "args": [
       "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
       "linux"
@@ -19726,28 +19720,6 @@
   }, 
   {
     "args": [
-      "ping_pong_streaming_pollset_set"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "registered_call"
     ], 
     "ci_platforms": [
@@ -20430,27 +20402,6 @@
   }, 
   {
     "args": [
-      "ping_pong_streaming_pollset_set"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "registered_call"
     ], 
     "ci_platforms": [
@@ -21123,27 +21074,6 @@
   }, 
   {
     "args": [
-      "ping_pong_streaming_pollset_set"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "registered_call"
     ], 
     "ci_platforms": [
@@ -21775,27 +21705,6 @@
   {
     "args": [
       "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22468,27 +22377,6 @@
   {
     "args": [
       "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
       "windows", 
@@ -23199,26 +23087,6 @@
   {
     "args": [
       "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming_pollset_set"
     ], 
     "ci_platforms": [
       "linux", 
@@ -24396,7 +24264,33 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "test/core/end2end/fuzzers/client_fuzzer_corpus/1306c4c6ea714d4db0e4d814c944d8d40335e0fa"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux", 
@@ -25100,7 +24994,32 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "test/core/end2end/fuzzers/client_fuzzer_corpus/25761748660a64111a8daa46f72ea1f336c2046a"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux", 
@@ -25804,7 +25723,32 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "test/core/end2end/fuzzers/client_fuzzer_corpus/361c6f4374443671f039fd9659577e4460178020"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux", 
@@ -26486,7 +26430,32 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "test/core/end2end/fuzzers/client_fuzzer_corpus/4b611a3748757e2fa89fcd2fb22d34444fbf5b42"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair+trace_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux", 
@@ -27190,7 +27159,32 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "test/core/end2end/fuzzers/client_fuzzer_corpus/64c0e0b4d9c2d25fdcb1e2bdcb999487fc096dad"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "windows", 
+      "linux", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_nosec_test", 
+    "platforms": [
+      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux", 
@@ -27960,7 +27954,31 @@
   }, 
   {
     "args": [
+<<<<<<< HEAD
       "test/core/end2end/fuzzers/client_fuzzer_corpus/8795e24f23db36e4f9ab609c9faff601b984eb6f"
+=======
+      "ping_pong_streaming_pollset_set"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "registered_call"
+>>>>>>> lb_pollset_propagation
     ], 
     "ci_platforms": [
       "linux", 
