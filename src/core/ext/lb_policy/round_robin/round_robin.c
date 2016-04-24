@@ -263,7 +263,7 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       grpc_pollset_set_del_pollset_set(exec_ctx, p->base.interested_parties,
-                                   pp->pollset_set);
+                                       pp->pollset_set);
       *target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
@@ -289,7 +289,7 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       grpc_pollset_set_del_pollset_set(exec_ctx, p->base.interested_parties,
-                                   pp->pollset_set);
+                                       pp->pollset_set);
       *pp->target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
@@ -329,7 +329,8 @@ static void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                   grpc_pollset_set *pollset_set, grpc_metadata_batch *initial_metadata,
+                   grpc_pollset_set *pollset_set,
+                   grpc_metadata_batch *initial_metadata,
                    uint32_t initial_metadata_flags,
                    grpc_connected_subchannel **target,
                    grpc_closure *on_complete) {
@@ -352,7 +353,8 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_pollset_set_add_pollset_set(exec_ctx, p->base.interested_parties, pollset_set);
+    grpc_pollset_set_add_pollset_set(exec_ctx, p->base.interested_parties,
+                                     pollset_set);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
     pp->pollset_set = pollset_set;
@@ -405,7 +407,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                     selected->subchannel, selected);
           }
           grpc_pollset_set_del_pollset_set(exec_ctx, p->base.interested_parties,
-                                       pp->pollset_set);
+                                           pp->pollset_set);
           grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
           gpr_free(pp);
         }

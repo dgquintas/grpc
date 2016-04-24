@@ -199,8 +199,8 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
                           grpc_call_context_element *context,
                           const void *transport_server_data,
                           grpc_call_stack *call_stack);
-/* Set a pollset for a call stack: must occur before the first op is started XXX
- */
+/* Set a pollset or a pollset_set for a call stack: must occur before the first
+ * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(
     grpc_exec_ctx *exec_ctx, grpc_call_stack *call_stack, grpc_pollset *pollset,
     grpc_pollset_set *or_pollset_set);
@@ -228,8 +228,9 @@ void grpc_call_stack_set_pollset_or_pollset_set(
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
 
-/* Ignore set pollset - used by filters to implement the set_pollset method
-   if they don't care about pollsets at all. Does nothing. XXX */
+/* Ignore set pollset{_set} - used by filters to implement the
+ * set_pollset_or_pollset_set method if they don't care about pollsets at all.
+ * Does nothing. */
 void grpc_call_stack_ignore_set_pollset_or_pollset_set(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem, grpc_pollset *pollset,
     grpc_pollset_set *or_pollset_set);

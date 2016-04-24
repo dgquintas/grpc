@@ -450,11 +450,17 @@ static void cc_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                           grpc_call_element *elem,
                                           grpc_pollset *pollset,
                                           grpc_pollset_set *or_pollset_set) {
+  GPR_ASSERT(!(pollset != NULL && or_pollset_set != NULL));
+  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
+
   call_data *calld = elem->call_data;
   if (pollset != NULL) {
+    calld->pollset = pollset;
     grpc_pollset_set_add_pollset(exec_ctx, calld->pollset_set, pollset);
   } else if (or_pollset_set != NULL) {
-    grpc_pollset_set_add_pollset_set(exec_ctx, calld->pollset_set, or_pollset_set);
+    calld->pollset = NULL;
+    grpc_pollset_set_add_pollset_set(exec_ctx, calld->pollset_set,
+                                     or_pollset_set);
   }
 }
 

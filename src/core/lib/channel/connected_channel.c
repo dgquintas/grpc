@@ -97,6 +97,9 @@ static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
                                        grpc_pollset *pollset,
                                        grpc_pollset_set *or_pollset_set) {
+  GPR_ASSERT(!(pollset != NULL && or_pollset_set != NULL));
+  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
+
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (pollset != NULL) {
