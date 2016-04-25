@@ -51,15 +51,22 @@
 #include "test/core/util/port.h"
 #include "test/core/end2end/cq_verifier.h"
 
-typedef struct lb_server_fixture {
+#define NUM_BACKENDS 2
+
+typedef struct server_fixture {
   grpc_server *server;
   grpc_call *server_call;
   grpc_completion_queue *cq;
   char *servers_hostport;
-  grpc_metadata_array *request_metadata_recv;
   int port;
-  int shutdown;
-} lb_server_fixture;
+  bool shutdown;
+  gpr_thd_id tid;
+} server_fixture;
+
+typedef struct test_fixture {
+  server_fixture lb_server;
+  server_fixture lb_backends[NUM_BACKENDS];
+} test_fixture;
 
 static gpr_timespec n_seconds_time(int n) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
@@ -91,15 +98,6 @@ static gpr_slice build_response_payload_slice() {
 #endif
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
-static void shutdown_server(lb_server_fixture *sf) {
-  if (!sf->server) return;
-  grpc_server_shutdown_and_notify(sf->server, sf->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 sf->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
-  grpc_server_destroy(sf->server);
-  sf->server = NULL;
-}
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
@@ -109,7 +107,7 @@ static void drain_cq(grpc_completion_queue *cq) {
 }
 
 
-void start_server(lb_server_fixture *sf) {
+void start_server(server_fixture *sf) {
   grpc_call *s;
   cq_verifier *cqv = cq_verifier_create(sf->cq);
   grpc_op ops[6];
@@ -130,10 +128,10 @@ void start_server(lb_server_fixture *sf) {
       grpc_server_request_call(sf->server, &s, &call_details,
                                &request_metadata_recv, sf->cq, sf->cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  gpr_log(GPR_INFO, "Server up!");
+  gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
   cq_expect_completion(cqv, tag(100), 1);
   cq_verify(cqv);
-  gpr_log(GPR_INFO, "Server after tag 100");
+  gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -148,7 +146,7 @@ void start_server(lb_server_fixture *sf) {
   op++;
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  gpr_log(GPR_INFO, "Server after tag 101");
+  gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
   for (i = 0; i < 4; i++) {
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -163,7 +161,7 @@ void start_server(lb_server_fixture *sf) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     cq_expect_completion(cqv, tag(102), 1);
     cq_verify(cqv);
-    gpr_log(GPR_INFO, "Server after tag 102, iter %d", i);
+    gpr_log(GPR_INFO, "Server[%s] after tag 102, iter %d", sf->servers_hostport, i);
 
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
@@ -175,7 +173,7 @@ void start_server(lb_server_fixture *sf) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     cq_expect_completion(cqv, tag(103), 1);
     cq_verify(cqv);
-    gpr_log(GPR_INFO, "Server after tag 103, iter %d", i);
+    gpr_log(GPR_INFO, "Server[%s] after tag 103, iter %d", sf->servers_hostport, i);
 
     grpc_byte_buffer_destroy(response_payload);
     grpc_byte_buffer_destroy(request_payload_recv);
@@ -204,17 +202,6 @@ void start_server(lb_server_fixture *sf) {
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
-
-  shutdown_server(sf);
-
-  grpc_completion_queue_shutdown(sf->cq);
-  drain_cq(sf->cq);
-  grpc_completion_queue_destroy(sf->cq);
-}
-
-void fork_server(void *arg) {
-  lb_server_fixture *sf = arg;
-  start_server(sf);
 }
 
 static void shutdown_client(grpc_channel *client) {
@@ -326,49 +313,95 @@ void perform_request(grpc_channel *client) {
   grpc_completion_queue_destroy(cq);
 }
 
-static lb_server_fixture *setup_lb_server(const char *server_host) {
-  lb_server_fixture *f = gpr_malloc(sizeof(lb_server_fixture));
-  int got_port;
+static void setup_server(const char* host, server_fixture *s) {
+  int assigned_port;
 
-  f->cq = grpc_completion_queue_create(NULL);
-  f->port = grpc_pick_unused_port_or_die();
+  s->cq = grpc_completion_queue_create(NULL);
+  char *colon_idx = strchr(host, ':');
+  if (colon_idx) {
+    char *port_str = colon_idx + 1;
+    s->port = atoi(port_str);
+    s->servers_hostport = gpr_strdup(host);
+  } else {
+    s->port = grpc_pick_unused_port_or_die();
+    gpr_join_host_port(&s->servers_hostport, host, s->port);
+  }
 
-  gpr_join_host_port(&f->servers_hostport, server_host, f->port);
+  s->server = grpc_server_create(NULL, NULL);
+  grpc_server_register_completion_queue(s->server, s->cq, NULL);
+  GPR_ASSERT((assigned_port = grpc_server_add_insecure_http2_port(
+                  s->server, s->servers_hostport)) > 0);
+  GPR_ASSERT(s->port == assigned_port);
+  grpc_server_start(s->server);
+  s->shutdown = 0;
+}
 
-  f->server = grpc_server_create(NULL, NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
-  GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
-                  f->server, f->servers_hostport)) > 0);
-  GPR_ASSERT(f->port == got_port);
-  grpc_server_start(f->server);
-  f->shutdown = 0;
-  return f;
+static void teardown_server(server_fixture *s) {
+  if (!s->server) return;
+  grpc_server_shutdown_and_notify(s->server, s->cq, tag(1000));
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 s->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
+  grpc_server_destroy(s->server);
+  s->server = NULL;
+  grpc_completion_queue_shutdown(s->cq);
+  drain_cq(s->cq);
+  grpc_completion_queue_destroy(s->cq);
+
+  s->shutdown = 1;
+  gpr_thd_join(s->tid);
+  gpr_free(s->servers_hostport);
+}
+
+
+static void fork_server(void *arg) {
+  server_fixture *sf = arg;
+  if (sf->port == 1234) start_server(sf);
+}
+
+static void setup_test_fixture(test_fixture *tf) {
+  gpr_thd_options options = gpr_thd_options_default();
+  gpr_thd_options_set_joinable(&options);
+
+  setup_server("127.0.0.1", &tf->lb_server);
+  gpr_thd_new(&tf->lb_server.tid, fork_server, &tf->lb_server, &options);
+
+  int backends_port_start = 1234;
+  for (int i = 0; i < NUM_BACKENDS; ++i) {
+    char* hostport;
+    gpr_asprintf(&hostport, "127.0.0.1:%d", backends_port_start++);
+    setup_server(hostport, &tf->lb_backends[i]);
+    gpr_free(hostport);
+    gpr_thd_new(&tf->lb_backends[i].tid, fork_server, &tf->lb_backends[i], &options);
+  }
+}
+
+static void teardown_test_fixture(test_fixture *tf) {
+  teardown_server(&tf->lb_server);
+  for (int i = 0; i < NUM_BACKENDS; ++i) {
+    teardown_server(&tf->lb_backends[i]);
+  }
 }
 
 
 int main(int argc, char **argv) {
-  lb_server_fixture *sf;
   char *client_hostport;
-  gpr_thd_id tid;
   grpc_channel *client;
-  gpr_thd_options options = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&options);
 
   grpc_test_init(argc, argv);
   grpc_init();
 
-  sf = setup_lb_server("127.0.0.1");
-  gpr_thd_new(&tid, fork_server, sf, &options);
+  test_fixture tf;
+  setup_test_fixture(&tf);
+
   gpr_asprintf(&client_hostport,
-               "ipv4:127.0.0.1:%d?lb_policy=grpclb&lb_enabled=1", sf->port);
+               "ipv4:127.0.0.1:%d?lb_policy=grpclb&lb_enabled=1", tf.lb_server.port);
   client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
   perform_request(client);
-
-  sf->shutdown = 1;
-  gpr_thd_join(tid);
-  gpr_free(sf->servers_hostport);
-  gpr_free(sf);
   gpr_free(client_hostport);
+
+  teardown_test_fixture(&tf);
+
   grpc_shutdown();
   return 0;
 }
