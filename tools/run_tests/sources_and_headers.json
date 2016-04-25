@@ -4084,7 +4084,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_lb_policy_grpclb", 
-      "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_resolver_dns_native", 
@@ -4161,7 +4160,6 @@
       "census", 
       "gpr", 
       "grpc_base", 
-      "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -5874,7 +5872,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr", 
       "grpc_base", 
       "grpc_client_config", 
       "nanopb"
@@ -5886,25 +5883,11 @@
     "language": "c", 
     "name": "grpc_lb_policy_grpclb", 
     "src": [
+      "src/core/ext/lb_policy/grpclb/grpclb.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c", 
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base", 
-      "grpc_client_config"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc_lb_policy_grpclb", 
-    "src": [
-      "src/core/ext/lb_policy/grpclb/grpclb.c"
     ], 
     "third_party": false, 
     "type": "filegroup"

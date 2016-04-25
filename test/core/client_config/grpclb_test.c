@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
   sf = setup_lb_server("127.0.0.1");
   gpr_thd_new(&tid, fork_server, sf, &options);
   gpr_asprintf(&client_hostport,
-               "ipv4:127.0.0.1:%d", sf->port);
+               "ipv4:127.0.0.1:%d?lb_policy=grpclb&lb_enabled=1", sf->port);
   client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
   perform_request(client);
 
