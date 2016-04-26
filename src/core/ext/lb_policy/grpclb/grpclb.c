@@ -427,8 +427,6 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   glb_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  memcpy(&p->foo, args, sizeof(*args));
-
   /* all input addresses in args->addresses come from a resolver that claims
    * they are LB services.
    *
