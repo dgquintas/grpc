@@ -84,11 +84,11 @@ static void add_pending_pick(pending_pick **root, grpc_pollset_set *pollset_set,
 static void add_pending_stage_change_notification(
     pending_stage_change_notification **root, grpc_connectivity_state *current,
     grpc_closure *notify) {
-  pending_stage_change_notification *pc = gpr_malloc(sizeof(*pc));
-  pc->next = *root;
-  pc->notify = notify;
-  pc->current = current;
-  *root = pc;
+  pending_stage_change_notification *psc = gpr_malloc(sizeof(*psc));
+  psc->next = *root;
+  psc->notify = notify;
+  psc->current = current;
+  *root = psc;
 }
 
 static void add_pending_ping(
@@ -128,18 +128,24 @@ void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   GPR_ASSERT(p->pending_picks == NULL);
   GPR_ASSERT(p->pending_stage_change_notification == NULL);
+  GPR_ASSERT(p->pending_pings == NULL);
   gpr_mu_destroy(&p->mu);
   gpr_free(p);
 }
 
 void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
-  pending_pick *pp;
   gpr_mu_lock(&p->mu);
   p->shutdown = 1;
-  pp = p->pending_picks;
+
+  pending_pick *pp = p->pending_picks;
   p->pending_picks = NULL;
+  pending_stage_change_notification *psc = p->pending_stage_change_notification;
+  p->pending_stage_change_notification = NULL;
+  pending_ping *pping = p->pending_pings;
+  p->pending_pings = NULL;
   gpr_mu_unlock(&p->mu);
+
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
@@ -147,10 +153,24 @@ void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     gpr_free(pp);
     pp = next;
   }
-  /* XXX flush everything */
 
+  while (psc != NULL) {
+    pending_stage_change_notification *next = psc->next;
+    grpc_exec_ctx_enqueue(exec_ctx, psc->notify, true, NULL);
+    gpr_free(psc);
+    psc = next;
+  }
 
-  GRPC_LB_POLICY_UNREF(exec_ctx, p->backends_rr_policy, "glb_shutdown");
+  while (pping != NULL) {
+    pending_ping *next = pping->next;
+    grpc_exec_ctx_enqueue(exec_ctx, pping->notify, true, NULL);
+    gpr_free(psc);
+    pping = next;
+  }
+
+  if (p->backends_rr_policy) {
+    GRPC_LB_POLICY_UNREF(exec_ctx, p->backends_rr_policy, "glb_shutdown");
+  }
 }
 
 static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
@@ -206,10 +226,14 @@ static grpc_grpclb_serverlist *query_for_backends(glb_lb_policy *p) {
   grpc_grpclb_serverlist *sl = gpr_malloc(sizeof(grpc_grpclb_serverlist));
   sl->num_servers = 1;
   sl->servers = gpr_malloc(sizeof(grpc_grpclb_server *) * 2);
+
   sl->servers[0] = gpr_malloc(sizeof(grpc_grpclb_server));
   strcpy(sl->servers[0]->ip_address, "127.0.0.1");
   sl->servers[0]->port = 1234;
 
+  sl->servers[1] = gpr_malloc(sizeof(grpc_grpclb_server));
+  strcpy(sl->servers[1]->ip_address, "127.0.0.1");
+  sl->servers[1]->port = 1235;
   return sl;
 }
 
@@ -277,12 +301,12 @@ static void start_picking(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
     grpc_lb_policy_exit_idle(exec_ctx, p->backends_rr_policy);
 
     /* flush pending ops */
-    pending_stage_change_notification *pc;
-    while ((pc = p->pending_stage_change_notification)) {
-      p->pending_stage_change_notification = pc->next;
+    pending_stage_change_notification *psc;
+    while ((psc = p->pending_stage_change_notification)) {
+      p->pending_stage_change_notification = psc->next;
       grpc_lb_policy_notify_on_state_change(exec_ctx, p->backends_rr_policy,
-                                            pc->current, pc->notify);
-      gpr_free(pc);
+                                            psc->current, psc->notify);
+      gpr_free(psc);
     }
 
     pending_pick *pp;
