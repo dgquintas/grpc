@@ -38,9 +38,14 @@ import sys
 import tempfile
 import importlib
 
-# 1) Compile src/proto/grpc/lb/v0/load_balancer.proto to a temp location
+# Example: tools/codegen/core/gen_grpclb_test_response.py \
+#          --lb_proto src/proto/grpc/lb/v0/load_balancer.proto \
+#          127.0.0.1:1234 10.0.0.1:4321
+
+# 1) Compile src/proto/grpc/lb/v1/load_balancer.proto to a temp location
 parser = argparse.ArgumentParser()
 parser.add_argument('--lb_proto', required=True)
+parser.add_argument('ipports', nargs='+')
 args = parser.parse_args()
 
 if not os.path.isfile(args.lb_proto):
@@ -71,15 +76,12 @@ lb_response = pb_module.LoadBalanceResponse()
 
 lb_response.initial_response.client_config = ''
 
-server = lb_response.server_list.servers.add()
-server.ip_address = '127.0.0.1'
-server.port = 1234
-server.load_balance_token = b'token1'
-
-server = lb_response.server_list.servers.add()
-server.ip_address = '127.0.0.2'
-server.port = 4321
-server.load_balance_token = b'token2'
+for ipport in args.ipports:
+    ip, port = ipport.split(':')
+    server = lb_response.server_list.servers.add()
+    server.ip_address = ip
+    server.port = int(port)
+    server.load_balance_token = b'token{}'.format(port)
 
 print(str(lb_response))
 serialized_bytes = lb_response.SerializeToString()

@@ -106,7 +106,7 @@ typedef struct {
   /** mutex protecting remaining members */
   gpr_mu mu;
 
-  //grpc_channel *lb_services_channel;
+  grpc_channel *lb_services_channel;
   grpc_lb_policy *backends_rr_policy;
   grpc_client_channel_factory *cc_factory;
 
@@ -221,7 +221,7 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static grpc_grpclb_serverlist *query_for_backends(glb_lb_policy *p) {
-  //GPR_ASSERT(p->lb_services_channel != NULL);
+  GPR_ASSERT(p->lb_services_channel != NULL);
 
   grpc_grpclb_serverlist *sl = gpr_malloc(sizeof(grpc_grpclb_serverlist));
   sl->num_servers = 2;
@@ -455,9 +455,9 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   char *target_uri_str = gpr_strjoin_sep(
       (const char **)addr_strs, args->addresses->naddrs, ",", &uri_path_len);
 
-  //p->lb_services_channel = grpc_client_channel_factory_create_channel(
-      //exec_ctx, p->cc_factory, target_uri_str,
-      //GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
+  p->lb_services_channel = grpc_client_channel_factory_create_channel(
+      exec_ctx, p->cc_factory, target_uri_str,
+      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, NULL);
 
   gpr_free(target_uri_str);
   for (size_t i = 0; i < args->addresses->naddrs; i++) {
@@ -465,10 +465,10 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   }
   gpr_free(addr_strs);
 
-  //if (p->lb_services_channel == NULL) {
-    //gpr_free(p);
-    //return NULL;
-  //}
+  if (p->lb_services_channel == NULL) {
+    gpr_free(p);
+    return NULL;
+  }
 
   grpc_lb_policy_init(&p->base, &glb_lb_policy_vtable);
   gpr_mu_init(&p->mu);
