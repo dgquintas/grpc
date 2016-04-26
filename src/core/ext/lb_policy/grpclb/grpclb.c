@@ -224,7 +224,7 @@ static grpc_grpclb_serverlist *query_for_backends(glb_lb_policy *p) {
   //GPR_ASSERT(p->lb_services_channel != NULL);
 
   grpc_grpclb_serverlist *sl = gpr_malloc(sizeof(grpc_grpclb_serverlist));
-  sl->num_servers = 1;
+  sl->num_servers = 2;
   sl->servers = gpr_malloc(sizeof(grpc_grpclb_server *) * 2);
 
   sl->servers[0] = gpr_malloc(sizeof(grpc_grpclb_server));
@@ -317,6 +317,13 @@ static void start_picking(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
                           pp->target, pp->on_complete);
       gpr_free(pp);
     }
+
+    pending_ping *pping;
+    while ((pping = p->pending_pings)) {
+      p->pending_pings = pping->next;
+      grpc_lb_policy_ping_one(exec_ctx, p->backends_rr_policy, pping->notify);
+      gpr_free(pping);
+    }
   }
   grpc_grpclb_destroy_serverlist(serverlist);
 }
@@ -337,18 +344,12 @@ int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
              grpc_connected_subchannel **target, grpc_closure *on_complete) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
+  int r;
 
   if (p->backends_rr_policy != NULL) {
-    pending_pick *pp = p->pending_picks;
-    while (pp != NULL) {
-      grpc_lb_policy_pick(exec_ctx, p->backends_rr_policy, pp->pollset_set,
-                          pp->initial_metadata, pp->initial_metadata_flags,
-                          pp->target, pp->on_complete);
-      pp = pp->next;
-    }
-    grpc_lb_policy_pick(exec_ctx, p->backends_rr_policy, pollset_set,
-                        initial_metadata, initial_metadata_flags, target,
-                        on_complete);
+    r = grpc_lb_policy_pick(exec_ctx, p->backends_rr_policy, pollset_set,
+                            initial_metadata, initial_metadata_flags, target,
+                            on_complete);
   } else {
     grpc_pollset_set_add_pollset_set(exec_ctx, p->base.interested_parties,
                                      pollset_set);
@@ -358,9 +359,10 @@ int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
+    r = 0;
   }
   gpr_mu_unlock(&p->mu);
-  return 0; /* picking is always delayed */
+  return r;
 }
 
 static grpc_connectivity_state glb_check_connectivity(grpc_exec_ctx *exec_ctx,

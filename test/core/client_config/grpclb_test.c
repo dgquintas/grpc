@@ -51,7 +51,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define NUM_BACKENDS 1
+#define NUM_BACKENDS 2
 
 typedef struct client_fixture {
   grpc_channel *client;
