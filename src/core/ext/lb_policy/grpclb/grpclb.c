@@ -99,6 +99,80 @@ static void add_pending_ping(
   *root = pping;
 }
 
+#define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                                  \
+  gpr_time_add(                                                              \
+      gpr_now(GPR_CLOCK_MONOTONIC),                                          \
+      gpr_time_from_millis((int64_t)(1e3 * (x)), GPR_TIMESPAN))
+
+typedef struct lb_client_data {
+  grpc_closure md_sent;
+  grpc_closure md_rcvd;
+  grpc_closure req_sent;
+  grpc_closure res_rcvd;
+  grpc_closure close_sent;
+  grpc_closure srv_status_rcvd;
+
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_call_error error;
+
+  grpc_call *c;
+  gpr_timespec deadline;
+
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+
+  char *details;
+  size_t details_capacity;
+
+  grpc_status_code status;
+
+  gpr_slice request_payload_slice;
+} lb_client_data;
+
+static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success){}
+static void md_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success){}
+static void req_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success){}
+static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success){}
+static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success){}
+static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success){}
+
+static lb_client_data *lb_client_data_create(grpc_channel* lb_channel) {
+  lb_client_data *lbcd = gpr_malloc(sizeof(lb_client_data));
+
+  grpc_closure_init(&lbcd->md_sent, md_sent_cb, lbcd);
+  grpc_closure_init(&lbcd->md_rcvd, md_recv_cb, lbcd);
+  grpc_closure_init(&lbcd->req_sent, req_sent_cb, lbcd);
+  grpc_closure_init(&lbcd->res_rcvd, res_rcvd_cb, lbcd);
+  grpc_closure_init(&lbcd->close_sent, close_sent_cb, lbcd);
+  grpc_closure_init(&lbcd->srv_status_rcvd, srv_status_rcvd_cb, lbcd);
+
+  memset(lbcd->ops, 0, sizeof(grpc_op) * 6);
+  lbcd->op = 0;
+
+  lbcd->deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100); /* XXX */
+
+  lbcd->c = grpc_channel_create_call(lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                               NULL, "/LB" /* XXX */, "???" /* XXX */,
+                               lbcd->deadline, NULL);
+
+  grpc_metadata_array_init(&lbcd->initial_metadata_recv);
+  grpc_metadata_array_init(&lbcd->trailing_metadata_recv);
+
+  lbcd->details = NULL;
+  lbcd->details_capacity = 0;
+
+  grpc_grpclb_request *request = grpc_grpclb_request_create("/LB");
+  lbcd->request_payload_slice = grpc_grpclb_request_encode(request);
+  grpc_grpclb_request_destroy(request);
+
+  return lbcd;
+}
+
+static void lb_client_closures_destroy(lb_client_data *closures) {
+  gpr_free(closures);
+}
+
 typedef struct {
   /** base policy: must be first */
   grpc_lb_policy base;
@@ -122,6 +196,7 @@ typedef struct {
   pending_stage_change_notification *pending_stage_change_notification;
   pending_ping *pending_pings;
 
+  lb_client_data *lb_client_data;
 } glb_lb_policy;
 
 void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
@@ -220,21 +295,15 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 }
 
-static grpc_grpclb_serverlist *query_for_backends(glb_lb_policy *p) {
+static void *tag(intptr_t t) { return (void *)t; }
+static grpc_grpclb_serverlist *query_for_backends(grpc_exec_ctx *exec_ctx,
+    glb_lb_policy *p) {
   GPR_ASSERT(p->lb_services_channel != NULL);
 
-  grpc_grpclb_serverlist *sl = gpr_malloc(sizeof(grpc_grpclb_serverlist));
-  sl->num_servers = 2;
-  sl->servers = gpr_malloc(sizeof(grpc_grpclb_server *) * 2);
+  p->lb_client_data = lb_client_data_create(p->lb_services_channel);
+  gpr_log(GPR_INFO, "Call %p created", p->lb_client_data->c);
+  GPR_ASSERT(p->lb_client_data->c);
 
-  sl->servers[0] = gpr_malloc(sizeof(grpc_grpclb_server));
-  strcpy(sl->servers[0]->ip_address, "127.0.0.1");
-  sl->servers[0]->port = 1234;
-
-  sl->servers[1] = gpr_malloc(sizeof(grpc_grpclb_server));
-  strcpy(sl->servers[1]->ip_address, "127.0.0.1");
-  sl->servers[1]->port = 1235;
-  return sl;
 }
 
 static grpc_lb_policy *create_rr(grpc_exec_ctx *exec_ctx,
