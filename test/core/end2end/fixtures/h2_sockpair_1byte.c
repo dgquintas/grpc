@@ -138,6 +138,9 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char **argv) {
   size_t i;
 
+  /* the single-byte nature of the test puts a lot of pressure on msan */
+  g_fixture_slowdown_factor = 2.0;
+
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
