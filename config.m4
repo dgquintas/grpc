@@ -63,6 +63,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
+    src/core/lib/support/string_util_win32.c \
     src/core/lib/support/string_win32.c \
     src/core/lib/support/subprocess_posix.c \
     src/core/lib/support/subprocess_windows.c \
@@ -77,6 +78,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/time_precise.c \
     src/core/lib/support/time_win32.c \
     src/core/lib/support/tls_pthread.c \
+    src/core/lib/support/tmpfile_msys.c \
     src/core/lib/support/tmpfile_posix.c \
     src/core/lib/support/tmpfile_win32.c \
     src/core/lib/support/wrap_memcpy.c \
@@ -108,6 +110,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
+    src/core/lib/iomgr/pops.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \

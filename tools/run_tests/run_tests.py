@@ -272,12 +272,17 @@ class NodeLanguage(object):
 
   def __init__(self):
     self.platform = platform_string()
-    self.node_version = '0.12'
 
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', 'node0.12',
+                                         'node4', 'node5'])
+    if self.args.compiler == 'default':
+      self.node_version = '4'
+    else:
+      # Take off the word "node"
+      self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
     if self.platform == 'windows':
@@ -356,24 +361,20 @@ class PhpLanguage(object):
 
 class PythonLanguage(object):
 
-  def __init__(self):
-    self._build_python_versions = ['2.7']
-    self._has_python_versions = []
-
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    self._tox_env = self._get_tox_env(self.args.compiler)
 
   def test_specs(self):
     # load list of known test suites
     with open('src/python/grpcio/tests/tests.json') as tests_json_file:
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-    environment['PYVER'] = '2.7'
+    environment['PYTHONPATH'] = os.path.abspath('src/python/gens')
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh'],
+          ['tools/run_tests/run_python.sh', self._tox_env],
           None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
@@ -398,18 +399,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    commands = []
-    for python_version in self._build_python_versions:
-      try:
-        with open(os.devnull, 'w') as output:
-          subprocess.check_call(['which', 'python' + python_version],
-                                stdout=output, stderr=output)
-        commands.append(['tools/run_tests/build_python.sh', python_version])
-        self._has_python_versions.append(python_version)
-      except:
-        jobset.message('WARNING', 'Missing Python ' + python_version,
-                       do_newline=True)
-    return commands
+    return [['tools/run_tests/build_python.sh', self._tox_env]]
 
   def post_tests_steps(self):
     return []
@@ -419,6 +409,15 @@ class PythonLanguage(object):
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def _get_tox_env(self, compiler):
+    """Returns name of tox environment based on selected compiler."""
+    if compiler == 'python2.7' or compiler == 'default':
+      return 'py27'
+    elif compiler == 'python3.4':
+      return 'py34'
+    else:
+      raise Exception('Compiler %s not supported.' % compiler)
 
   def __str__(self):
     return 'python'
@@ -807,7 +806,9 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.6',
-                           'vs2010', 'vs2013', 'vs2015'],
+                           'vs2010', 'vs2013', 'vs2015',
+                           'python2.7', 'python3.4',
+                           'node0.12', 'node4', 'node5'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
@@ -911,13 +912,13 @@ if args.use_docker:
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
   env['DOCKERFILE_DIR'] = dockerfile_dir
-  env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
+  env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
                         shell=True,
                         env=env)
   sys.exit(0)

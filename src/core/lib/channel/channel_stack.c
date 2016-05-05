@@ -189,16 +189,14 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_call_stack_set_pollset_or_pollset_set(
-    grpc_exec_ctx *exec_ctx, grpc_call_stack *call_stack, grpc_pollset *pollset,
-    grpc_pollset_set *or_pollset_set) {
+void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_stack *call_stack,
+                                                grpc_pops *pops) {
   size_t count = call_stack->count;
   grpc_call_element *call_elems;
   char *user_data;
   size_t i;
 
-  GPR_ASSERT(!(pollset != NULL && or_pollset_set != NULL));
-  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
   call_elems = CALL_ELEMS_FROM_STACK(call_stack);
   user_data = ((char *)call_elems) +
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
@@ -206,24 +204,26 @@ void grpc_call_stack_set_pollset_or_pollset_set(
   /* init per-filter data */
   for (i = 0; i < count; i++) {
     call_elems[i].filter->set_pollset_or_pollset_set(exec_ctx, &call_elems[i],
-                                                     pollset, or_pollset_set);
+                                                     pops);
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
 }
 
-void grpc_call_stack_ignore_set_pollset_or_pollset_set(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem, grpc_pollset *pollset,
-    grpc_pollset_set *or_pollset_set) {}
+void grpc_call_stack_ignore_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                                       grpc_call_element *elem,
+                                                       grpc_pops *pops) {}
 
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack) {
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             void *and_free_memory) {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i]);
+    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i],
+                                       i == count - 1 ? and_free_memory : NULL);
   }
 }
 

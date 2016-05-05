@@ -125,23 +125,25 @@ void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
   transport->vtable->perform_op(exec_ctx, transport, op);
 }
 
-void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
-                                grpc_transport *transport, grpc_stream *stream,
-                                grpc_pollset *pollset) {
-  transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
-}
-
-void grpc_transport_set_pollset_set(grpc_exec_ctx *exec_ctx,
-                                    grpc_transport *transport,
-                                    grpc_stream *stream,
-                                    grpc_pollset_set *pollset_set) {
-  transport->vtable->set_pollset_set(exec_ctx, transport, stream, pollset_set);
+void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
+                             grpc_stream *stream, grpc_pops *pops) {
+  grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
+  if ((pollset = grpc_pops_pollset(pops)) != NULL) {
+    transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+  } else if ((pollset_set = grpc_pops_pollset_set(pops)) != NULL) {
+    transport->vtable->set_pollset_set(exec_ctx, transport, stream,
+                                       pollset_set);
+  } else {
+    abort();
+  }
 }
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream) {
-  transport->vtable->destroy_stream(exec_ctx, transport, stream);
+                                   grpc_stream *stream, void *and_free_memory) {
+  transport->vtable->destroy_stream(exec_ctx, transport, stream,
+                                    and_free_memory);
 }
 
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,

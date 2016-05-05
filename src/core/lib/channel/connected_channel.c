@@ -95,30 +95,21 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
-                                       grpc_pollset *pollset,
-                                       grpc_pollset_set *or_pollset_set) {
-  GPR_ASSERT(!(pollset != NULL && or_pollset_set != NULL));
-  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
-
+                                       grpc_pops *pops) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  if (pollset != NULL) {
-    grpc_transport_set_pollset(exec_ctx, chand->transport,
-                               TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollset);
-  } else if (or_pollset_set != NULL) {
-    grpc_transport_set_pollset_set(exec_ctx, chand->transport,
-                                   TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-                                   or_pollset_set);
-  }
+  grpc_transport_set_pops(exec_ctx, chand->transport,
+                          TRANSPORT_STREAM_FROM_CALL_DATA(calld), pops);
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              void *and_free_memory) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_transport_destroy_stream(exec_ctx, chand->transport,
-                                TRANSPORT_STREAM_FROM_CALL_DATA(calld));
+                                TRANSPORT_STREAM_FROM_CALL_DATA(calld),
+                                and_free_memory);
 }
 
 /* Constructor for channel_data */
