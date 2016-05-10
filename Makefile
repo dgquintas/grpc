@@ -941,8 +941,9 @@ grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
-http_fuzzer_test: $(BINDIR)/$(CONFIG)/http_fuzzer_test
 http_parser_test: $(BINDIR)/$(CONFIG)/http_parser_test
+http_request_fuzzer_test: $(BINDIR)/$(CONFIG)/http_request_fuzzer_test
+http_response_fuzzer_test: $(BINDIR)/$(CONFIG)/http_response_fuzzer_test
 httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
 httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
@@ -1125,7 +1126,8 @@ h2_uds_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
 api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
 hpack_parser_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry
-http_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry
+http_request_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry
+http_response_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry
 json_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry
 nanopb_fuzzer_response_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry
 nanopb_fuzzer_serverlist_test_one_entry: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry
@@ -1354,7 +1356,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry \
-  $(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry \
+  $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry \
+  $(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/json_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test_one_entry \
   $(BINDIR)/$(CONFIG)/nanopb_fuzzer_serverlist_test_one_entry \
@@ -2495,6 +2498,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2583,20 +2587,29 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/b64.c \
-    src/core/lib/security/client_auth_filter.c \
-    src/core/lib/security/credentials.c \
-    src/core/lib/security/credentials_metadata.c \
-    src/core/lib/security/credentials_posix.c \
-    src/core/lib/security/credentials_win32.c \
-    src/core/lib/security/google_default_credentials.c \
-    src/core/lib/security/handshake.c \
-    src/core/lib/security/json_token.c \
-    src/core/lib/security/jwt_verifier.c \
-    src/core/lib/security/secure_endpoint.c \
-    src/core/lib/security/security_connector.c \
-    src/core/lib/security/security_context.c \
-    src/core/lib/security/server_auth_filter.c \
+    src/core/lib/security/context/security_context.c \
+    src/core/lib/security/credentials/composite/composite_credentials.c \
+    src/core/lib/security/credentials/credentials.c \
+    src/core/lib/security/credentials/credentials_metadata.c \
+    src/core/lib/security/credentials/fake/fake_credentials.c \
+    src/core/lib/security/credentials/google_default/credentials_posix.c \
+    src/core/lib/security/credentials/google_default/credentials_win32.c \
+    src/core/lib/security/credentials/google_default/google_default_credentials.c \
+    src/core/lib/security/credentials/iam/iam_credentials.c \
+    src/core/lib/security/credentials/jwt/json_token.c \
+    src/core/lib/security/credentials/jwt/jwt_credentials.c \
+    src/core/lib/security/credentials/jwt/jwt_verifier.c \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/lib/security/credentials/plugin/plugin_credentials.c \
+    src/core/lib/security/credentials/ssl/ssl_credentials.c \
+    src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/handshake.c \
+    src/core/lib/security/transport/secure_endpoint.c \
+    src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/server_auth_filter.c \
+    src/core/lib/security/transport/tsi_error.c \
+    src/core/lib/security/util/b64.c \
+    src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
@@ -2837,6 +2850,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -8006,38 +8020,6 @@ endif
 endif
 
 
-HTTP_FUZZER_TEST_SRC = \
-    test/core/http/fuzzer.c \
-
-HTTP_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_FUZZER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/http_fuzzer_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/http_fuzzer_test: $(HTTP_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(HTTP_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/http_fuzzer_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/http/fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_http_fuzzer_test: $(HTTP_FUZZER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(HTTP_FUZZER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 HTTP_PARSER_TEST_SRC = \
     test/core/http/parser_test.c \
 
@@ -8066,6 +8048,70 @@ deps_http_parser_test: $(HTTP_PARSER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HTTP_PARSER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+HTTP_REQUEST_FUZZER_TEST_SRC = \
+    test/core/http/request_fuzzer.c \
+
+HTTP_REQUEST_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_REQUEST_FUZZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/http_request_fuzzer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/http_request_fuzzer_test: $(HTTP_REQUEST_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(HTTP_REQUEST_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/http_request_fuzzer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/http/request_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_http_request_fuzzer_test: $(HTTP_REQUEST_FUZZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTP_REQUEST_FUZZER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+HTTP_RESPONSE_FUZZER_TEST_SRC = \
+    test/core/http/response_fuzzer.c \
+
+HTTP_RESPONSE_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_RESPONSE_FUZZER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/http_response_fuzzer_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/http_response_fuzzer_test: $(HTTP_RESPONSE_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(HTTP_RESPONSE_FUZZER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/http_response_fuzzer_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/http/response_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_http_response_fuzzer_test: $(HTTP_RESPONSE_FUZZER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTP_RESPONSE_FUZZER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14097,37 +14143,72 @@ endif
 endif
 
 
-HTTP_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/http/fuzzer.c \
+HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC = \
+    test/core/http/request_fuzzer.c \
     test/core/util/one_corpus_entry_fuzzer.c \
 
-HTTP_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_FUZZER_TEST_ONE_ENTRY_SRC))))
+HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry: openssl_dep_error
+$(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry: $(HTTP_FUZZER_TEST_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry: $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HTTP_FUZZER_TEST_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry
+	$(Q) $(LD) $(LDFLAGS) $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/http_request_fuzzer_test_one_entry
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/http/fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/http/request_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 $(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_http_fuzzer_test_one_entry: $(HTTP_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
+deps_http_request_fuzzer_test_one_entry: $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HTTP_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
+-include $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
+endif
+endif
+
+
+HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC = \
+    test/core/http/response_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.c \
+
+HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry: $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/http_response_fuzzer_test_one_entry
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/http/response_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_http_response_fuzzer_test_one_entry: $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
 
@@ -14318,20 +14399,29 @@ ifneq ($(OPENSSL_DEP),)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/b64.c: $(OPENSSL_DEP)
-src/core/lib/security/client_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_metadata.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_posix.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_win32.c: $(OPENSSL_DEP)
-src/core/lib/security/google_default_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/handshake.c: $(OPENSSL_DEP)
-src/core/lib/security/json_token.c: $(OPENSSL_DEP)
-src/core/lib/security/jwt_verifier.c: $(OPENSSL_DEP)
-src/core/lib/security/secure_endpoint.c: $(OPENSSL_DEP)
-src/core/lib/security/security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/security_context.c: $(OPENSSL_DEP)
-src/core/lib/security/server_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/context/security_context.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/composite/composite_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_posix.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_win32.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/jwt_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/jwt_verifier.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/handshake.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/tsi_error.c: $(OPENSSL_DEP)
+src/core/lib/security/util/b64.c: $(OPENSSL_DEP)
+src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/ssl_transport_security.c: $(OPENSSL_DEP)

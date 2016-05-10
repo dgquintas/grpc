@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 #include <openssl/rsa.h>
 #include <stdlib.h>
@@ -45,7 +45,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
@@ -546,37 +549,37 @@ static void validate_compute_engine_http_request(
 
 static int compute_engine_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
-    void *user_data) {
-  grpc_httpcli_response response =
-      http_response(200, valid_oauth2_json_response);
+    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
-  on_response(exec_ctx, user_data, &response);
+  *response = http_response(200, valid_oauth2_json_response);
+  grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   return 1;
 }
 
 static int compute_engine_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
-    void *user_data) {
-  grpc_httpcli_response response = http_response(403, "Not Authorized.");
+    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_httpcli_response *response) {
   validate_compute_engine_http_request(request);
-  on_response(exec_ctx, user_data, &response);
+  *response = http_response(403, "Not Authorized.");
+  grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   return 1;
 }
 
 static int httpcli_post_should_not_be_called(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
     const char *body_bytes, size_t body_size, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data) {
+    grpc_closure *on_done, grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP POST should not be called" == NULL);
   return 1;
 }
 
-static int httpcli_get_should_not_be_called(
-    grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
-    void *user_data) {
+static int httpcli_get_should_not_be_called(grpc_exec_ctx *exec_ctx,
+                                            const grpc_httpcli_request *request,
+                                            gpr_timespec deadline,
+                                            grpc_closure *on_done,
+                                            grpc_httpcli_response *response) {
   GPR_ASSERT("HTTP GET should not be called" == NULL);
   return 1;
 }
@@ -650,21 +653,20 @@ static void validate_refresh_token_http_request(
 static int refresh_token_httpcli_post_success(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
     const char *body, size_t body_size, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data) {
-  grpc_httpcli_response response =
-      http_response(200, valid_oauth2_json_response);
+    grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
-  on_response(exec_ctx, user_data, &response);
+  *response = http_response(200, valid_oauth2_json_response);
+  grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   return 1;
 }
 
 static int refresh_token_httpcli_post_failure(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
     const char *body, size_t body_size, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data) {
-  grpc_httpcli_response response = http_response(403, "Not Authorized.");
+    grpc_closure *on_done, grpc_httpcli_response *response) {
   validate_refresh_token_http_request(request, body, body_size);
-  on_response(exec_ctx, user_data, &response);
+  *response = http_response(403, "Not Authorized.");
+  grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   return 1;
 }
 
@@ -896,17 +898,17 @@ static void test_google_default_creds_refresh_token(void) {
 
 static int default_creds_gce_detection_httpcli_get_success_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
-    void *user_data) {
-  grpc_httpcli_response response = http_response(200, "");
+    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_httpcli_response *response) {
+  *response = http_response(200, "");
   grpc_http_header header;
   header.key = "Metadata-Flavor";
   header.value = "Google";
-  response.hdr_count = 1;
-  response.hdrs = &header;
+  response->hdr_count = 1;
+  response->hdrs = &header;
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
-  on_response(exec_ctx, user_data, &response);
+  grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   return 1;
 }
 
@@ -958,13 +960,13 @@ static void test_google_default_creds_gce(void) {
 
 static int default_creds_gce_detection_httpcli_get_failure_override(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
-    void *user_data) {
+    gpr_timespec deadline, grpc_closure *on_done,
+    grpc_httpcli_response *response) {
   /* No magic header. */
-  grpc_httpcli_response response = http_response(200, "");
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
-  on_response(exec_ctx, user_data, &response);
+  *response = http_response(200, "");
+  grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);
   return 1;
 }
 
