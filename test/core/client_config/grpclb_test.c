@@ -153,7 +153,7 @@ void start_lb_server(server_fixture *sf) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "Server[%s] after tag 201", sf->servers_hostport);
 
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 1; i++) { // XXX: make it sleep and send some updates
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
     op = ops;
@@ -191,7 +191,7 @@ void start_lb_server(server_fixture *sf) {
   op = ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
   op->reserved = NULL;
@@ -202,6 +202,7 @@ void start_lb_server(server_fixture *sf) {
   cq_expect_completion(cqv, tag(201), 1);
   cq_expect_completion(cqv, tag(204), 1);
   cq_verify(cqv);
+  gpr_log(GPR_INFO, "Server[%s] after tag 204. All done.", sf->servers_hostport);
 
   grpc_call_destroy(s);
 
@@ -283,8 +284,11 @@ void start_backend_server(server_fixture *sf) {
 
     grpc_byte_buffer_destroy(response_payload);
     grpc_byte_buffer_destroy(request_payload_recv);
+
+    gpr_log(GPR_INFO, "Server[%s] %d ROUND TRIPS DONE\n", sf->servers_hostport, i+1);
   }
 
+  gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP", sf->servers_hostport);
   gpr_slice_unref(response_payload_slice);
 
   op = ops;
@@ -312,7 +316,7 @@ void start_backend_server(server_fixture *sf) {
 
 void perform_request(client_fixture *cf) {
   grpc_call *c;
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = n_seconds_time(1000);
   cq_verifier *cqv = cq_verifier_create(cf->cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -451,6 +455,7 @@ static void setup_server(const char *host, server_fixture *s) {
 
 static void teardown_server(server_fixture *s) {
   if (!s->server) return;
+  gpr_log(GPR_INFO, "Server[%s] shutting downnnnnnnnnnnnnnnnnnnnnn", s->servers_hostport);
   grpc_server_shutdown_and_notify(s->server, s->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
                  s->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
@@ -467,9 +472,14 @@ static void teardown_server(server_fixture *s) {
   gpr_free(s->servers_hostport);
 }
 
-static void fork_server(void *arg) {
+static void fork_backend_server(void *arg) {
   server_fixture *sf = arg;
   start_backend_server(sf);
+}
+
+static void fork_lb_server(void *arg) {
+  server_fixture *sf = arg;
+  start_lb_server(sf);
 }
 
 static void setup_test_fixture(test_fixture *tf) {
@@ -477,7 +487,7 @@ static void setup_test_fixture(test_fixture *tf) {
   gpr_thd_options_set_joinable(&options);
 
   setup_server("127.0.0.1", &tf->lb_server);
-  gpr_thd_new(&tf->lb_server.tid, fork_server, &tf->lb_server, &options);
+  gpr_thd_new(&tf->lb_server.tid, fork_lb_server, &tf->lb_server, &options);
 
   int backends_port_start = 1234;
   for (int i = 0; i < NUM_BACKENDS; ++i) {
@@ -485,8 +495,8 @@ static void setup_test_fixture(test_fixture *tf) {
     gpr_asprintf(&hostport, "127.0.0.1:%d", backends_port_start++);
     setup_server(hostport, &tf->lb_backends[i]);
     gpr_free(hostport);
-    gpr_thd_new(&tf->lb_backends[i].tid, fork_server, &tf->lb_backends[i],
-                &options);
+    gpr_thd_new(&tf->lb_backends[i].tid, fork_backend_server,
+                &tf->lb_backends[i], &options);
   }
 
   char *server_uri;
@@ -497,10 +507,10 @@ static void setup_test_fixture(test_fixture *tf) {
 }
 
 static void teardown_test_fixture(test_fixture *tf) {
-  teardown_server(&tf->lb_server);
   for (int i = 0; i < NUM_BACKENDS; ++i) {
     teardown_server(&tf->lb_backends[i]);
   }
+  teardown_server(&tf->lb_server);
   teardown_client(&tf->client);
 }
 
