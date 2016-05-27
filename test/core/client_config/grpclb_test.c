@@ -32,7 +32,9 @@
  */
 
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
+#include <tgmath.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -46,6 +48,7 @@
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -81,47 +84,53 @@ static gpr_timespec n_seconds_time(int n) {
 
 static void *tag(intptr_t t) { return (void *)t; }
 
-static gpr_slice build_first_response_payload_slice() {
+static gpr_slice build_response_payload_slice(const char *host, int *ports,
+                                              size_t nports) {
   /*
   server_list {
     servers {
       ip_address: "127.0.0.1"
-      port: 1234
-      load_balance_token: "token1234"
+      port: ...
+      load_balance_token: "token..."
     }
-    servers {
-      ip_address: "127.0.0.1"
-      port: 1235
-      load_balance_token: "token1235"
-    }
+    ...
   } */
-  return gpr_slice_from_copied_string(
-      "\x12\x36\x0a\x19\x0a\x09\x31\x32\x37\x2e\x30\x2e\x30\x2e\x31\x10\xd2\x09"
-      "\x1a\x09\x74\x6f\x6b\x65\x6e\x31\x32\x33\x34\x0a\x19\x0a\x09\x31\x32\x37"
-      "\x2e\x30\x2e\x30\x2e\x31\x10\xd3\x09\x1a\x09\x74\x6f\x6b\x65\x6e\x31\x32"
-      "\x33\x35");
-}
+  char **hostports_vec = gpr_malloc(sizeof(char *) * nports);
+  for (size_t i = 0; i < nports; i++) {
+    gpr_join_host_port(&hostports_vec[i], "127.0.0.1", ports[i]);
+  }
+  char *hostports_str =
+      gpr_strjoin_sep((const char **)hostports_vec, nports, " ", NULL);
+  gpr_log(GPR_INFO, "generating response for %s", hostports_str);
 
-static gpr_slice build_second_response_payload_slice() {
-  /*
-  server_list {
-    servers {
-      ip_address: "127.0.0.1"
-      port: 1236
-      load_balance_token: "token1236"
-    }
-    servers {
-      ip_address: "127.0.0.1"
-      port: 1237
-      load_balance_token: "token1237"
-    }
-  } */
+  char *output_fname;
+  FILE *tmpfd = gpr_tmpfile("grpclb_test", &output_fname);
+  fclose(tmpfd);
+  char *cmdline;
+  gpr_asprintf(&cmdline,
+               "./tools/codegen/core/gen_grpclb_test_response.py --lb_proto "
+               "src/proto/grpc/lb/v1/load_balancer.proto %s "
+               "--output %s --quiet",
+               hostports_str, output_fname);
+  GPR_ASSERT(system(cmdline) == 0);
+  FILE *f = fopen(output_fname, "rb");
+  fseek(f, 0, SEEK_END);
+  const size_t fsize = (size_t)ftell(f);
+  rewind(f);
 
-  return gpr_slice_from_copied_string(
-      "\x12\x36\x0a\x19\x0a\x09\x31\x32\x37\x2e\x30\x2e\x30\x2e\x31\x10\xd4\x09"
-      "\x1a\x09\x74\x6f\x6b\x65\x6e\x31\x32\x33\x36\x0a\x19\x0a\x09\x31\x32\x37"
-      "\x2e\x30\x2e\x30\x2e\x31\x10\xd5\x09\x1a\x09\x74\x6f\x6b\x65\x6e\x31\x32"
-      "\x33\x37");
+  char *serialized_response = gpr_malloc(fsize);
+  GPR_ASSERT(fread(serialized_response, fsize, 1, f) == 1);
+  fclose(f);
+  gpr_free(output_fname);
+  gpr_free(cmdline);
+
+  for (size_t i = 0; i < nports; i++) {
+    gpr_free(hostports_vec[i]);
+  }
+  gpr_free(hostports_vec);
+  gpr_free(hostports_str);
+
+  return gpr_slice_from_copied_buffer(serialized_response, fsize);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -138,7 +147,7 @@ static void sleep_ms(int delay_ms) {
                                gpr_time_from_millis(delay_ms, GPR_TIMESPAN)));
 }
 
-static void start_lb_server(server_fixture *sf) {
+static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
   grpc_call *s;
   cq_verifier *cqv = cq_verifier_create(sf->cq);
   grpc_op ops[6];
@@ -196,10 +205,12 @@ static void start_lb_server(server_fixture *sf) {
   gpr_slice response_payload_slice;
   for (int i = 0; i < 2; i++) {
     if (i == 0) {
-      response_payload_slice = build_first_response_payload_slice();
+      response_payload_slice =
+          build_response_payload_slice("127.0.0.1", ports, nports / 2);
     } else {
       sleep_ms(2000);
-      response_payload_slice = build_second_response_payload_slice();
+      response_payload_slice = build_response_payload_slice(
+          "127.0.0.1", ports + (nports/2), (nports + 1) / 2 /* ceil */);
     }
 
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -517,26 +528,26 @@ static void fork_backend_server(void *arg) {
 }
 
 static void fork_lb_server(void *arg) {
-  server_fixture *sf = arg;
-  start_lb_server(sf);
+  test_fixture *tf = arg;
+  int ports[NUM_BACKENDS];
+  for (int i = 0; i < NUM_BACKENDS; i++) {
+    ports[i] = tf->lb_backends[i].port;
+  }
+  start_lb_server(&tf->lb_server, ports, NUM_BACKENDS);
 }
 
 static void setup_test_fixture(test_fixture *tf) {
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
 
-  setup_server("127.0.0.1", &tf->lb_server);
-  gpr_thd_new(&tf->lb_server.tid, fork_lb_server, &tf->lb_server, &options);
-
-  int backends_port_start = 1234;
   for (int i = 0; i < NUM_BACKENDS; ++i) {
-    char *hostport;
-    gpr_asprintf(&hostport, "127.0.0.1:%d", backends_port_start++);
-    setup_server(hostport, &tf->lb_backends[i]);
-    gpr_free(hostport);
+    setup_server("127.0.0.1", &tf->lb_backends[i]);
     gpr_thd_new(&tf->lb_backends[i].tid, fork_backend_server,
                 &tf->lb_backends[i], &options);
   }
+
+  setup_server("127.0.0.1", &tf->lb_server);
+  gpr_thd_new(&tf->lb_server.tid, fork_lb_server, &tf->lb_server, &options);
 
   char *server_uri;
   gpr_asprintf(&server_uri, "ipv4:%s?lb_policy=grpclb&lb_enabled=1",
@@ -560,11 +571,15 @@ int main(int argc, char **argv) {
   test_fixture tf;
   setup_test_fixture(&tf);
 
-  perform_request(&tf.client);  // "consumes" 1st backend server of 1st serverlist
-  perform_request(&tf.client);  // "consumes" 2nd backend server of 1st serverlist 
+  perform_request(
+      &tf.client);  // "consumes" 1st backend server of 1st serverlist
+  perform_request(
+      &tf.client);  // "consumes" 2nd backend server of 1st serverlist
 
-  perform_request(&tf.client);  // "consumes" 1st backend server of 2nd serverlist
-  perform_request(&tf.client);  // "consumes" 2nd backend server of 2nd serverlist 
+  perform_request(
+      &tf.client);  // "consumes" 1st backend server of 2nd serverlist
+  perform_request(
+      &tf.client);  // "consumes" 2nd backend server of 2nd serverlist
 
   teardown_test_fixture(&tf);
   grpc_shutdown();
