@@ -130,7 +130,9 @@ static gpr_slice build_response_payload_slice(const char *host, int *ports,
   gpr_free(hostports_vec);
   gpr_free(hostports_str);
 
-  return gpr_slice_from_copied_buffer(serialized_response, fsize);
+  const gpr_slice response_slice = gpr_slice_from_copied_buffer(serialized_response, fsize);
+  gpr_free(serialized_response);
+  return response_slice;
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -208,7 +210,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
       response_payload_slice =
           build_response_payload_slice("127.0.0.1", ports, nports / 2);
     } else {
-      sleep_ms(2000);
+      sleep_ms(1500);
       response_payload_slice = build_response_payload_slice(
           "127.0.0.1", ports + (nports/2), (nports + 1) / 2 /* ceil */);
     }

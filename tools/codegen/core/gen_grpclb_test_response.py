@@ -39,12 +39,15 @@ import tempfile
 import importlib
 
 # Example: tools/codegen/core/gen_grpclb_test_response.py \
-#          --lb_proto src/proto/grpc/lb/v0/load_balancer.proto \
+#          --lb_proto src/proto/grpc/lb/v1/load_balancer.proto \
 #          127.0.0.1:1234 10.0.0.1:4321
 
 # 1) Compile src/proto/grpc/lb/v1/load_balancer.proto to a temp location
 parser = argparse.ArgumentParser()
 parser.add_argument('--lb_proto', required=True)
+parser.add_argument('-e', '--expiration_interval_secs', type=int)
+parser.add_argument('-o', '--output')
+parser.add_argument('-q', '--quiet', default=False, action='store_true')
 parser.add_argument('ipports', nargs='+')
 args = parser.parse_args()
 
@@ -73,16 +76,22 @@ pb_module = importlib.import_module(module_name)
 
 # 3) Generate!
 lb_response = pb_module.LoadBalanceResponse()
-
-lb_response.initial_response.client_config = ''
+if args.expiration_interval_secs:
+  lb_response.server_list.expiration_interval.seconds = \
+  args.expiration_interval_secs
 
 for ipport in args.ipports:
-    ip, port = ipport.split(':')
-    server = lb_response.server_list.servers.add()
-    server.ip_address = ip
-    server.port = int(port)
-    server.load_balance_token = b'token{}'.format(port)
+  ip, port = ipport.split(':')
+  server = lb_response.server_list.servers.add()
+  server.ip_address = ip
+  server.port = int(port)
+  server.load_balance_token = b'token{}'.format(port)
 
-print(str(lb_response))
 serialized_bytes = lb_response.SerializeToString()
-print(''.join('\\x{:02x}'.format(ord(c)) for c in serialized_bytes))
+serialized_hex = ''.join('\\x{:02x}'.format(ord(c)) for c in serialized_bytes)
+if args.output:
+  with open(args.output, 'w') as f:
+    f.write(serialized_bytes)
+if not args.quiet:
+  print(str(lb_response))
+  print(serialized_hex)
