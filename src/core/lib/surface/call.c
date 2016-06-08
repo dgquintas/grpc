@@ -65,12 +65,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_BATCHES 6
 
-typedef struct {
-  grpc_ioreq_completion_func on_complete;
-  void *user_data;
-  int success;
-} completed_request;
-
 #define MAX_SEND_EXTRA_METADATA_COUNT 3
 
 /* Status data for a request can come from several sources; this
@@ -97,25 +91,6 @@ typedef struct {
   grpc_mdstr *details;
 } received_status;
 
-/* How far through the GRPC stream have we read? */
-typedef enum {
-  /* We are still waiting for initial metadata to complete */
-  READ_STATE_INITIAL = 0,
-  /* We have gotten initial metadata, and are reading either
-     messages or trailing metadata */
-  READ_STATE_GOT_INITIAL_METADATA,
-  /* The stream is closed for reading */
-  READ_STATE_READ_CLOSED,
-  /* The stream is closed for reading & writing */
-  READ_STATE_STREAM_CLOSED
-} read_state;
-
-typedef enum {
-  WRITE_STATE_INITIAL = 0,
-  WRITE_STATE_STARTED,
-  WRITE_STATE_WRITE_CLOSED
-} write_state;
-
 typedef struct batch_control {
   grpc_call *call;
   grpc_cq_completion cq_completion;
@@ -135,7 +110,7 @@ typedef struct batch_control {
 
 struct grpc_call {
   grpc_completion_queue *cq;
-  grpc_pops pops;
+  grpc_polling_entity pollent;
   grpc_channel *channel;
   grpc_call *parent;
   grpc_call *first_child;
@@ -177,7 +152,7 @@ struct grpc_call {
   received_status status[STATUS_SOURCE_COUNT];
 
   /* Call stats: only valid after trailing metadata received */
-  grpc_transport_stream_stats stats;
+  grpc_call_stats stats;
 
   /* Compression algorithm for the call */
   grpc_compression_algorithm compression_algorithm;
@@ -289,14 +264,16 @@ grpc_call *grpc_call_create(
         pollset_set_alternative == NULL &&
         "Only one of 'cq' and 'pollset_set_alternative' should be non-NULL.");
     GRPC_CQ_INTERNAL_REF(cq, "bind");
-    call->pops = grpc_pops_create_from_pollset(grpc_cq_pollset(cq));
+    call->pollent =
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
   }
   if (pollset_set_alternative != NULL) {
-    call->pops = grpc_pops_create_from_pollset_set(pollset_set_alternative);
+    call->pollent =
+        grpc_polling_entity_create_from_pollset_set(pollset_set_alternative);
   }
-  if (!grpc_pops_is_empty(&call->pops)) {
+  if (!grpc_polling_entity_is_empty(&call->pollent)) {
     grpc_call_stack_set_pollset_or_pollset_set(
-        &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pops);
+        &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
   }
   if (parent_call != NULL) {
     GRPC_CALL_INTERNAL_REF(parent_call, "child");
@@ -352,15 +329,15 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq) {
   GPR_ASSERT(cq);
 
-  if (grpc_pops_pollset_set(&call->pops) != NULL) {
+  if (grpc_polling_entity_pollset_set(&call->pollent) != NULL) {
     gpr_log(GPR_ERROR, "A pollset_set is already registered for this call.");
     abort();
   }
   call->cq = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
-  call->pops = grpc_pops_create_from_pollset(grpc_cq_pollset(cq));
+  call->pollent = grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
   grpc_call_stack_set_pollset_or_pollset_set(
-      exec_ctx, CALL_STACK_FROM_CALL(call), &call->pops);
+      exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
 }
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -407,7 +384,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
   grpc_channel *channel = c->channel;
-  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), c);
+  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->stats, c);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
   GPR_TIMER_END("destroy_call", 0);
 }
@@ -1436,7 +1413,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->stats;
+        stream_op.collect_stats = &call->stats.transport_stream_stats;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         /* Flag validation: currently allow no flags */
@@ -1458,7 +1435,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->stats;
+        stream_op.collect_stats = &call->stats.transport_stream_stats;
         break;
     }
   }
