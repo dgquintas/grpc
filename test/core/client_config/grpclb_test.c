@@ -70,6 +70,7 @@ typedef struct server_fixture {
   char *servers_hostport;
   int port;
   gpr_thd_id tid;
+  int num_round_trips;
 } server_fixture;
 
 typedef struct test_fixture {
@@ -130,17 +131,16 @@ static gpr_slice build_response_payload_slice(const char *host, int *ports,
   gpr_free(hostports_vec);
   gpr_free(hostports_str);
 
-  const gpr_slice response_slice = gpr_slice_from_copied_buffer(serialized_response, fsize);
+  const gpr_slice response_slice =
+      gpr_slice_from_copied_buffer(serialized_response, fsize);
   gpr_free(serialized_response);
   return response_slice;
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
-
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
+    ev = grpc_completion_queue_next(cq, n_seconds_time(5), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -201,8 +201,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
   cq_verify(cqv);
   gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG (recv_payload = %p)",
           sf->servers_hostport, request_payload_recv);
-  // XXX validate request.
-
+  // TODO(dgq): validate request.
   grpc_byte_buffer_destroy(request_payload_recv);
   gpr_slice response_payload_slice;
   for (int i = 0; i < 2; i++) {
@@ -210,9 +209,19 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
       response_payload_slice =
           build_response_payload_slice("127.0.0.1", ports, nports / 2);
     } else {
-      sleep_ms(1500);
+      // - The LB server waits 800ms before sending an update. This update will
+      // arrive before the first client request is done, and so will skip the
+      // second server altogether: the 2nd client request will go to the 1st
+      // server of the second batch (or the 3rd server total).
+      // - The LB server waits 1500ms. The update arrives after the pick for the
+      // 2nd server of the 1st update but before the next pick. All server are
+      // used and things work.
+      // - The LB server waits >2000ms. The update arrives after the first two
+      // request are done and the third pick is performed, which returns, in RR
+      // fashion, the 1st server of the 1st update. But this server is now dead.  
+      sleep_ms(2000);
       response_payload_slice = build_response_payload_slice(
-          "127.0.0.1", ports + (nports/2), (nports + 1) / 2 /* ceil */);
+          "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */);
     }
 
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
@@ -259,113 +268,147 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
   grpc_call_details_destroy(&call_details);
 }
 
-void start_backend_server(server_fixture *sf) {
+static void start_backend_server(server_fixture *sf) {
   grpc_call *s;
-  cq_verifier *cqv = cq_verifier_create(sf->cq);
+  cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
   grpc_call_error error;
-  int was_cancelled = 2;
+  int was_cancelled;
   grpc_byte_buffer *request_payload_recv;
   grpc_byte_buffer *response_payload;
-  int i;
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string("hello you");
+  grpc_event ev;
 
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
+  while (true) {
+    cqv = cq_verifier_create(sf->cq);
+    was_cancelled = 2;
+    grpc_metadata_array_init(&request_metadata_recv);
+    grpc_call_details_init(&call_details);
 
-  error = grpc_server_request_call(sf->server, &s, &call_details,
-                                   &request_metadata_recv, sf->cq, sf->cq,
-                                   tag(100));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
-  cq_expect_completion(cqv, tag(100), 1);
-  cq_verify(cqv);
-  gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
-
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
-
-  for (i = 0; i < 4; i++) {
-    response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+    error = grpc_server_request_call(sf->server, &s, &call_details,
+                                     &request_metadata_recv, sf->cq, sf->cq,
+                                     tag(100));
+    GPR_ASSERT(GRPC_CALL_OK == error);
+    gpr_log(GPR_INFO, "Server[%s] up", sf->servers_hostport);
+    ev = grpc_completion_queue_next(sf->cq, n_seconds_time(60), NULL);
+    if (!ev.success) {
+      gpr_log(GPR_INFO, "Server[%s] being torn down", sf->servers_hostport);
+      cq_verifier_destroy(cqv);
+      grpc_metadata_array_destroy(&request_metadata_recv);
+      grpc_call_details_destroy(&call_details);
+      return;
+    }
+    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    gpr_log(GPR_INFO, "Server[%s] after tag 100", sf->servers_hostport);
 
     op = ops;
-    op->op = GRPC_OP_RECV_MESSAGE;
-    op->data.recv_message = &request_payload_recv;
+    op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    op->data.send_initial_metadata.count = 0;
     op->flags = 0;
     op->reserved = NULL;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(102), 1);
-    cq_verify(cqv);
-    gpr_log(GPR_INFO, "Server[%s] after tag 102, iter %d", sf->servers_hostport,
-            i);
-
-    op = ops;
-    op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message = response_payload;
+    op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    op->data.recv_close_on_server.cancelled = &was_cancelled;
     op->flags = 0;
     op->reserved = NULL;
     op++;
-    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cq_expect_completion(cqv, tag(103), 1);
+    gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
+
+    /*for (i = 0; i < 4; i++) {*/
+    bool exit = false;
+    gpr_slice response_payload_slice =
+        gpr_slice_from_copied_string("hello you");
+    while (!exit) {
+      op = ops;
+      op->op = GRPC_OP_RECV_MESSAGE;
+      op->data.recv_message = &request_payload_recv;
+      op->flags = 0;
+      op->reserved = NULL;
+      op++;
+      error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+      GPR_ASSERT(GRPC_CALL_OK == error);
+      ev = grpc_completion_queue_next(sf->cq, n_seconds_time(3), NULL);
+      if (ev.type == GRPC_OP_COMPLETE && ev.success) {
+        GPR_ASSERT(ev.tag = tag(102));
+        if (request_payload_recv == NULL) {
+          exit = true;
+          gpr_log(GPR_INFO,
+                  "Server[%s] recv \"close\" from client, exiting. iter %d",
+                  sf->servers_hostport, sf->num_round_trips);
+        }
+      } else {
+        gpr_log(GPR_INFO, "Server[%s] forced to shutdown. iter %d",
+                sf->servers_hostport, sf->num_round_trips);
+        exit = true;
+      }
+      gpr_log(GPR_INFO, "Server[%s] after tag 102, iter %d",
+              sf->servers_hostport, sf->num_round_trips);
+
+      if (!exit) {
+        response_payload =
+            grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+        op = ops;
+        op->op = GRPC_OP_SEND_MESSAGE;
+        op->data.send_message = response_payload;
+        op->flags = 0;
+        op->reserved = NULL;
+        op++;
+        error =
+            grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+        GPR_ASSERT(GRPC_CALL_OK == error);
+        ev = grpc_completion_queue_next(sf->cq, n_seconds_time(3), NULL);
+        if (ev.type == GRPC_OP_COMPLETE && ev.success) {
+          GPR_ASSERT(ev.tag = tag(103));
+        } else {
+          gpr_log(GPR_INFO, "Server[%s] forced to shutdown. iter %d",
+                  sf->servers_hostport, sf->num_round_trips);
+          exit = true;
+        }
+        gpr_log(GPR_INFO, "Server[%s] after tag 103, iter %d",
+                sf->servers_hostport, sf->num_round_trips);
+        grpc_byte_buffer_destroy(response_payload);
+      }
+
+      grpc_byte_buffer_destroy(request_payload_recv);
+      gpr_log(GPR_INFO, "Server[%s] %d ROUND TRIPS DONE\n",
+              sf->servers_hostport, sf->num_round_trips + 1);
+
+      ++sf->num_round_trips;
+    }
+
+    gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP after %d round trips",
+            sf->servers_hostport, sf->num_round_trips);
+    gpr_slice_unref(response_payload_slice);
+
+    op = ops;
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.trailing_metadata_count = 0;
+    op->data.send_status_from_server.status = GRPC_STATUS_OK;
+    op->data.send_status_from_server.status_details = "Backend server out a-ok";
+    op->flags = 0;
+    op->reserved = NULL;
+    op++;
+    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
+
+    cq_expect_completion(cqv, tag(101), 1);
+    cq_expect_completion(cqv, tag(104), 1);
     cq_verify(cqv);
-    gpr_log(GPR_INFO, "Server[%s] after tag 103, iter %d", sf->servers_hostport,
-            i);
+    gpr_log(GPR_INFO, "Server[%s] DONEEEE", sf->servers_hostport);
 
-    grpc_byte_buffer_destroy(response_payload);
-    grpc_byte_buffer_destroy(request_payload_recv);
-
-    gpr_log(GPR_INFO, "Server[%s] %d ROUND TRIPS DONE\n", sf->servers_hostport,
-            i + 1);
+    grpc_call_destroy(s);
+    cq_verifier_destroy(cqv);
+    grpc_metadata_array_destroy(&request_metadata_recv);
+    grpc_call_details_destroy(&call_details);
   }
-
-  gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP", sf->servers_hostport);
-  gpr_slice_unref(response_payload_slice);
-
-  op = ops;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = "Backend server out a-ok";
-  op->flags = 0;
-  op->reserved = NULL;
-  op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cq_expect_completion(cqv, tag(101), 1);
-  cq_expect_completion(cqv, tag(104), 1);
-  cq_verify(cqv);
-  gpr_log(GPR_INFO, "Server[%s] DONEEEE", sf->servers_hostport);
-
-  grpc_call_destroy(s);
-
-  cq_verifier_destroy(cqv);
-
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
 }
 
-void perform_request(client_fixture *cf) {
+static void perform_request(client_fixture *cf) {
   grpc_call *c;
-  gpr_timespec deadline = n_seconds_time(1000);
   cq_verifier *cqv = cq_verifier_create(cf->cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -382,9 +425,11 @@ void perform_request(client_fixture *cf) {
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
-                               deadline, NULL);
-  gpr_log(GPR_INFO, "Call %p created", c);
+                               n_seconds_time(1000), NULL);
+  gpr_log(GPR_INFO,
+          "Call %p created ++++++++++++++++++++++++++++++++++++++++++", c);
   GPR_ASSERT(c);
+  char *peer;
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -428,7 +473,7 @@ void perform_request(client_fixture *cf) {
     error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    char *peer = grpc_call_get_peer(c);
+    peer = grpc_call_get_peer(c);
     gpr_log(GPR_INFO, "Client before tag 2, host %s, iter %d", peer, i);
     cq_expect_completion(cqv, tag(2), 1);
     cq_verify(cqv);
@@ -454,6 +499,12 @@ void perform_request(client_fixture *cf) {
   cq_verify(cqv);
   gpr_log(GPR_INFO, "Client after tag 1");
   gpr_log(GPR_INFO, "Client after tag 3");
+  peer = grpc_call_get_peer(c);
+  gpr_log(GPR_INFO,
+          "Client DONE WITH SERVER %s "
+          "-----------------------------------------------",
+          peer);
+  gpr_free(peer);
 
   grpc_call_destroy(c);
 
@@ -506,15 +557,14 @@ static void setup_server(const char *host, server_fixture *sf) {
 static void teardown_server(server_fixture *sf) {
   if (!sf->server) return;
 
-  gpr_thd_join(sf->tid);
-
-  gpr_log(GPR_INFO, "Server[%s] shutting downnnnnnnnnnnnnnnnnnnnnn",
-          sf->servers_hostport);
+  gpr_log(GPR_INFO, "Server[%s] shutting down", sf->servers_hostport);
   grpc_server_shutdown_and_notify(sf->server, sf->cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(
                  sf->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(sf->server);
+  gpr_thd_join(sf->tid);
+
   sf->server = NULL;
   grpc_completion_queue_shutdown(sf->cq);
   drain_cq(sf->cq);
@@ -571,6 +621,7 @@ int main(int argc, char **argv) {
   grpc_init();
 
   test_fixture tf;
+  memset(&tf, 0, sizeof(tf));
   setup_test_fixture(&tf);
 
   perform_request(
