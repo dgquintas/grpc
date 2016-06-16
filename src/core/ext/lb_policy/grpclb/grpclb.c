@@ -225,6 +225,7 @@ static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(lbcd->c);
   grpc_call_error error;
   grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &lbcd->initial_metadata_recv;
@@ -241,6 +242,7 @@ static void md_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(lbcd->c);
   grpc_call_error error;
   grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
 
   op->op = GRPC_OP_SEND_MESSAGE;
@@ -258,6 +260,7 @@ static void req_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_call_error error;
 
   grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
 
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -275,6 +278,7 @@ static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
    * serverlist. */
   lb_client_data *lbcd = arg;
   grpc_op ops[2];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
   if (lbcd->response_payload) {
     grpc_byte_buffer_reader bbr;
@@ -525,6 +529,7 @@ static void query_for_backends(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
   p->lbcd = lb_client_data_create(p);
   grpc_call_error error;
   grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;

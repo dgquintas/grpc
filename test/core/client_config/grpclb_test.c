@@ -70,13 +70,14 @@ typedef struct server_fixture {
   char *servers_hostport;
   int port;
   gpr_thd_id tid;
-  int num_round_trips;
+  int num_calls_serviced;
 } server_fixture;
 
 typedef struct test_fixture {
   server_fixture lb_server;
   server_fixture lb_backends[NUM_BACKENDS];
   client_fixture client;
+  int lb_server_update_delay_ms;
 } test_fixture;
 
 static gpr_timespec n_seconds_time(int n) {
@@ -149,7 +150,8 @@ static void sleep_ms(int delay_ms) {
                                gpr_time_from_millis(delay_ms, GPR_TIMESPAN)));
 }
 
-static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
+static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
+                            int update_delay_ms) {
   grpc_call *s;
   cq_verifier *cqv = cq_verifier_create(sf->cq);
   grpc_op ops[6];
@@ -161,6 +163,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
   grpc_byte_buffer *request_payload_recv;
   grpc_byte_buffer *response_payload;
 
+  memset(ops, 0, sizeof(ops));
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
@@ -205,20 +208,12 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
   gpr_slice response_payload_slice;
   for (int i = 0; i < 2; i++) {
     if (i == 0) {
+      // First half of the ports.
       response_payload_slice =
           build_response_payload_slice("127.0.0.1", ports, nports / 2);
     } else {
-      // - The LB server waits 800ms before sending an update. This update will
-      // arrive before the first client request is done, and so will skip the
-      // second server altogether: the 2nd client request will go to the 1st
-      // server of the second batch (or the 3rd server total).
-      // - The LB server waits 1500ms. The update arrives after the pick for the
-      // 2nd server of the 1st update but before the next pick. All server are
-      // used and things work.
-      // - The LB server waits >2000ms. The update arrives after the first two
-      // request are done and the third pick is performed, which returns, in RR
-      // fashion, the 1st server of the 1st update. But this server is now dead.
-      sleep_ms(800);
+      // Second half of the ports.
+      sleep_ms(update_delay_ms);
       response_payload_slice = build_response_payload_slice(
           "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */);
     }
@@ -281,6 +276,7 @@ static void start_backend_server(server_fixture *sf) {
   grpc_event ev;
 
   while (true) {
+    memset(ops, 0, sizeof(ops));
     cqv = cq_verifier_create(sf->cq);
     was_cancelled = 2;
     grpc_metadata_array_init(&request_metadata_recv);
@@ -317,7 +313,6 @@ static void start_backend_server(server_fixture *sf) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     gpr_log(GPR_INFO, "Server[%s] after tag 101", sf->servers_hostport);
 
-    /*for (i = 0; i < 4; i++) {*/
     bool exit = false;
     gpr_slice response_payload_slice =
         gpr_slice_from_copied_string("hello you");
@@ -336,16 +331,16 @@ static void start_backend_server(server_fixture *sf) {
         if (request_payload_recv == NULL) {
           exit = true;
           gpr_log(GPR_INFO,
-                  "Server[%s] recv \"close\" from client, exiting. iter %d",
-                  sf->servers_hostport, sf->num_round_trips);
+                  "Server[%s] recv \"close\" from client, exiting. Call #%d",
+                  sf->servers_hostport, sf->num_calls_serviced);
         }
       } else {
-        gpr_log(GPR_INFO, "Server[%s] forced to shutdown. iter %d",
-                sf->servers_hostport, sf->num_round_trips);
+        gpr_log(GPR_INFO, "Server[%s] forced to shutdown. Call #%d",
+                sf->servers_hostport, sf->num_calls_serviced);
         exit = true;
       }
-      gpr_log(GPR_INFO, "Server[%s] after tag 102, iter %d",
-              sf->servers_hostport, sf->num_round_trips);
+      gpr_log(GPR_INFO, "Server[%s] after tag 102. Call #%d",
+              sf->servers_hostport, sf->num_calls_serviced);
 
       if (!exit) {
         response_payload =
@@ -363,24 +358,20 @@ static void start_backend_server(server_fixture *sf) {
         if (ev.type == GRPC_OP_COMPLETE && ev.success) {
           GPR_ASSERT(ev.tag = tag(103));
         } else {
-          gpr_log(GPR_INFO, "Server[%s] forced to shutdown. iter %d",
-                  sf->servers_hostport, sf->num_round_trips);
+          gpr_log(GPR_INFO, "Server[%s] forced to shutdown. Call #%d",
+                  sf->servers_hostport, sf->num_calls_serviced);
           exit = true;
         }
-        gpr_log(GPR_INFO, "Server[%s] after tag 103, iter %d",
-                sf->servers_hostport, sf->num_round_trips);
+        gpr_log(GPR_INFO, "Server[%s] after tag 103. Call #%d",
+                sf->servers_hostport, sf->num_calls_serviced);
         grpc_byte_buffer_destroy(response_payload);
       }
 
       grpc_byte_buffer_destroy(request_payload_recv);
-      gpr_log(GPR_INFO, "Server[%s] %d ROUND TRIPS DONE\n",
-              sf->servers_hostport, sf->num_round_trips + 1);
-
-      ++sf->num_round_trips;
     }
+    ++sf->num_calls_serviced;
 
-    gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP after %d round trips",
-            sf->servers_hostport, sf->num_round_trips);
+    gpr_log(GPR_INFO, "Server[%s] OUT OF THE LOOP", sf->servers_hostport);
     gpr_slice_unref(response_payload_slice);
 
     op = ops;
@@ -397,7 +388,8 @@ static void start_backend_server(server_fixture *sf) {
     cq_expect_completion(cqv, tag(101), 1);
     cq_expect_completion(cqv, tag(104), 1);
     cq_verify(cqv);
-    gpr_log(GPR_INFO, "Server[%s] DONEEEE", sf->servers_hostport);
+    gpr_log(GPR_INFO, "Server[%s] DONE. After servicing %d calls",
+        sf->servers_hostport, sf->num_calls_serviced);
 
     grpc_call_destroy(s);
     cq_verifier_destroy(cqv);
@@ -420,6 +412,8 @@ static void perform_request(client_fixture *cf) {
   grpc_byte_buffer *request_payload;
   grpc_byte_buffer *response_payload_recv;
   int i;
+
+  memset(ops, 0, sizeof(ops));
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
 
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
@@ -472,10 +466,8 @@ static void perform_request(client_fixture *cf) {
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     peer = grpc_call_get_peer(c);
-    gpr_log(GPR_INFO, "Client before tag 2, host %s, iter %d", peer, i);
     cq_expect_completion(cqv, tag(2), 1);
     cq_verify(cqv);
-    gpr_log(GPR_INFO, "Client after tag 2, host %s, iter %d", peer, i);
     gpr_free(peer);
 
     grpc_byte_buffer_destroy(request_payload);
@@ -495,15 +487,13 @@ static void perform_request(client_fixture *cf) {
   cq_expect_completion(cqv, tag(1), 1);
   cq_expect_completion(cqv, tag(3), 1);
   cq_verify(cqv);
-  gpr_log(GPR_INFO, "Client after tag 1");
-  gpr_log(GPR_INFO, "Client after tag 3");
   peer = grpc_call_get_peer(c);
   gpr_log(GPR_INFO, "Client DONE WITH SERVER %s ", peer);
   gpr_free(peer);
 
   grpc_call_destroy(c);
 
-  cq_verify_empty(cqv);
+  cq_verify_empty_timeout(cqv, 1);
   cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -580,10 +570,14 @@ static void fork_lb_server(void *arg) {
   for (int i = 0; i < NUM_BACKENDS; i++) {
     ports[i] = tf->lb_backends[i].port;
   }
-  start_lb_server(&tf->lb_server, ports, NUM_BACKENDS);
+  start_lb_server(&tf->lb_server, ports, NUM_BACKENDS,
+                  tf->lb_server_update_delay_ms);
 }
 
-static void setup_test_fixture(test_fixture *tf) {
+static void setup_test_fixture(test_fixture *tf,
+                               int lb_server_update_delay_ms) {
+  tf->lb_server_update_delay_ms = lb_server_update_delay_ms;
+
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
 
@@ -611,14 +605,14 @@ static void teardown_test_fixture(test_fixture *tf) {
   teardown_server(&tf->lb_server);
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_init();
-
+// The LB server will send two updates: batch 1 and batch 2. Each batch contains
+// two addresses, both of a valid and running backend server. Batch 1 is readily
+// available and provided as soon as the client establishes the streaming call.
+// Batch 2 is sent after a delay of \a lb_server_update_delay_ms milliseconds.
+static test_fixture test_update(int lb_server_update_delay_ms) {
   test_fixture tf;
   memset(&tf, 0, sizeof(tf));
-  setup_test_fixture(&tf);
-
+  setup_test_fixture(&tf, lb_server_update_delay_ms);
   perform_request(
       &tf.client);  // "consumes" 1st backend server of 1st serverlist
   perform_request(
@@ -630,6 +624,47 @@ int main(int argc, char **argv) {
       &tf.client);  // "consumes" 2nd backend server of 2nd serverlist
 
   teardown_test_fixture(&tf);
+  return tf;
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_init();
+
+  test_fixture tf_result;
+  // Clients take a bit over one second to complete a call (the last part of the
+  // call sleeps for 1 second while verifying the client's completion queue is
+  // empty). Therefore:
+  //
+  // If the LB server waits 800ms before sending an update, it will arrive
+  // before the first client request is done, skipping the second server from
+  // batch 1 altogether: the 2nd client request will go to the 1st server of
+  // batch 2 (ie, the third one out of the four total servers).
+  tf_result = test_update(800);
+  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 0);
+  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced == 2);
+  GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 1);
+
+  // If the LB server waits 1500ms, the update arrives after having picked the
+  // 2nd server from batch 1 but before the next pick for the first server of
+  // batch 2. All server are used.
+  tf_result = test_update(1500);
+  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 1);
+
+  // If the LB server waits >= 2000ms, the update arrives after the first two
+  // request are done and the third pick is performed, which returns, in RR
+  // fashion, the 1st server of the 1st update. Therefore, the second server of
+  // batch 1 is hit twice, whereas the first server of batch 2 is never hit.
+  tf_result = test_update(2000);
+  GPR_ASSERT(tf_result.lb_backends[0].num_calls_serviced == 2);
+  GPR_ASSERT(tf_result.lb_backends[1].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[2].num_calls_serviced == 1);
+  GPR_ASSERT(tf_result.lb_backends[3].num_calls_serviced == 0);
+
   grpc_shutdown();
   return 0;
 }

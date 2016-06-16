@@ -56,6 +56,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
     dec_arg->num_servers++;
   } else { /* second pass */
     grpc_grpclb_server *server = gpr_malloc(sizeof(grpc_grpclb_server));
+    memset(server, 0, sizeof(grpc_grpclb_server));
     GPR_ASSERT(dec_arg->num_servers > 0);
     if (dec_arg->i == 0) { /* first iteration of second pass */
       dec_arg->servers =
