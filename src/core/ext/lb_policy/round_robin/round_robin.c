@@ -228,7 +228,6 @@ static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
 }
 
 static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
-  gpr_log(GPR_INFO, __func__);
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   size_t i;
   ready_list *elem;
@@ -256,7 +255,6 @@ static void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
-  gpr_log(GPR_INFO, __func__);
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   size_t i;
