@@ -286,7 +286,7 @@ static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     if (serverlist) {
       gpr_slice_unref(response_slice);
       if (grpc_lb_glb_trace) {
-        gpr_log(GPR_INFO, "Serverlist with %d servers received",
+        gpr_log(GPR_INFO, "Serverlist with %zu servers received",
                 serverlist->num_servers);
       }
       /* update serverlist */
@@ -356,7 +356,7 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_log(
         GPR_INFO,
         "status from lb server received. Status = %d, Details = '%s', Capaticy "
-        "= %d",
+        "= %zu",
         lbcd->status, lbcd->status_details, lbcd->status_details_capacity);
   }
 
@@ -610,7 +610,8 @@ static void start_picking(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
 static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
   p->rr_policy = create_rr(exec_ctx, p->serverlist, p);
   if (grpc_lb_glb_trace) {
-    gpr_log(GPR_INFO, "Created RR policy (%p)", p->rr_policy);
+    gpr_log(GPR_INFO, "Created RR policy (0x%" PRIxPTR ")",
+            (intptr_t)p->rr_policy);
   }
   GPR_ASSERT(p->rr_policy != NULL);
   p->rr_connectivity->state =
@@ -629,7 +630,7 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_handover_pending_pick");
     pp->wrapped_on_complete_arg->rr_policy = p->rr_policy;
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Pending pick about to PICK from %p", p->rr_policy);
+      gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%"PRIxPTR"", (intptr_t)p->rr_policy);
     }
     grpc_lb_policy_pick(exec_ctx, p->rr_policy, pp->pollent,
                         pp->initial_metadata, pp->initial_metadata_flags,
@@ -643,7 +644,7 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_handover_pending_ping");
     pping->wrapped_notify_arg->rr_policy = p->rr_policy;
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Pending ping about to PING from %p", p->rr_policy);
+      gpr_log(GPR_INFO, "Pending ping about to PING from 0x%"PRIxPTR"", (intptr_t)p->rr_policy);
     }
     grpc_lb_policy_ping_one(exec_ctx, p->rr_policy, pping->wrapped_notify);
     gpr_free(pping);
@@ -671,7 +672,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
   if (p->rr_policy != NULL) {
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "about to PICK from %p", p->rr_policy);
+      gpr_log(GPR_INFO, "about to PICK from 0x%"PRIxPTR"", (intptr_t)p->rr_policy);
     }
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_pick");
     wrapped_rr_closure_arg *warg = gpr_malloc(sizeof(wrapped_rr_closure_arg));

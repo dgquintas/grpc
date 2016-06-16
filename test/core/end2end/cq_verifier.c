@@ -217,7 +217,7 @@ static void fail_no_event_received(cq_verifier *v) {
 }
 
 void cq_verify(cq_verifier *v) {
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1000);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
   grpc_event ev;
   expectation *e;
   char *s;
@@ -227,7 +227,6 @@ void cq_verify(cq_verifier *v) {
 
   while (v->expect.next != &v->expect) {
     ev = grpc_completion_queue_next(v->cq, deadline, NULL);
-    gpr_log(GPR_INFO, "LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL");
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
@@ -285,6 +284,6 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, int success) {
+void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
   add(v, GRPC_OP_COMPLETE, tag)->success = success;
 }

@@ -199,8 +199,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(202), 1);
   cq_verify(cqv);
-  gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG (recv_payload = %p)",
-          sf->servers_hostport, request_payload_recv);
+  gpr_log(GPR_INFO, "LB Server[%s] after RECV_MSG", sf->servers_hostport);
   // TODO(dgq): validate request.
   grpc_byte_buffer_destroy(request_payload_recv);
   gpr_slice response_payload_slice;
@@ -218,8 +217,8 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports) {
       // used and things work.
       // - The LB server waits >2000ms. The update arrives after the first two
       // request are done and the third pick is performed, which returns, in RR
-      // fashion, the 1st server of the 1st update. But this server is now dead.  
-      sleep_ms(2000);
+      // fashion, the 1st server of the 1st update. But this server is now dead.
+      sleep_ms(800);
       response_payload_slice = build_response_payload_slice(
           "127.0.0.1", ports + (nports / 2), (nports + 1) / 2 /* ceil */);
     }
@@ -426,8 +425,7 @@ static void perform_request(client_fixture *cf) {
   c = grpc_channel_create_call(cf->client, NULL, GRPC_PROPAGATE_DEFAULTS,
                                cf->cq, "/foo", "foo.test.google.fr:1234",
                                n_seconds_time(1000), NULL);
-  gpr_log(GPR_INFO,
-          "Call %p created ++++++++++++++++++++++++++++++++++++++++++", c);
+  gpr_log(GPR_INFO, "Call 0x%" PRIxPTR " created", (intptr_t)c);
   GPR_ASSERT(c);
   char *peer;
 
@@ -500,10 +498,7 @@ static void perform_request(client_fixture *cf) {
   gpr_log(GPR_INFO, "Client after tag 1");
   gpr_log(GPR_INFO, "Client after tag 3");
   peer = grpc_call_get_peer(c);
-  gpr_log(GPR_INFO,
-          "Client DONE WITH SERVER %s "
-          "-----------------------------------------------",
-          peer);
+  gpr_log(GPR_INFO, "Client DONE WITH SERVER %s ", peer);
   gpr_free(peer);
 
   grpc_call_destroy(c);
