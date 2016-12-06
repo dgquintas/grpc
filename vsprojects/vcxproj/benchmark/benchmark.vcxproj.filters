@@ -106,19 +106,19 @@
 
   <ItemGroup>
     <Filter Include="third_party">
-      <UniqueIdentifier>{7458b63d-7ba4-103d-2bed-3e3ad30d8237}</UniqueIdentifier>
+      <UniqueIdentifier>{7b593518-9fee-107e-6b64-24bdce73f939}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party\benchmark">
-      <UniqueIdentifier>{3111b1b0-21cd-89e5-1dde-68eee22f75d8}</UniqueIdentifier>
+      <UniqueIdentifier>{f0d35de1-6b41-778d-0ba0-faad514fb0f4}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party\benchmark\include">
-      <UniqueIdentifier>{045f2c9f-39a8-d548-4596-2b82a180314a}</UniqueIdentifier>
+      <UniqueIdentifier>{cbc02dfa-face-8cc6-0efb-efacc0c3369c}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party\benchmark\include\benchmark">
-      <UniqueIdentifier>{dcedff65-88c1-3daa-2a2e-25911e9c9752}</UniqueIdentifier>
+      <UniqueIdentifier>{4f2f03fc-b82d-df33-63ee-bedebeb2c0ee}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party\benchmark\src">
-      <UniqueIdentifier>{d3343091-ae27-29e9-3c59-09b21561282c}</UniqueIdentifier>
+      <UniqueIdentifier>{f42a8e0a-5a76-0e6f-d708-f0306858f673}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

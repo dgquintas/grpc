@@ -39,11 +39,11 @@ os.chdir(os.path.dirname(sys.argv[0])+'/../..')
 out = {}
 
 out['libs'] = [{
-    'name': 'google_benchmark',
+    'name': 'benchmark',
     'build': 'private',
     'language': 'c++',
     'secure': 'no',
-    'defaults': 'google_benchmark',
+    'defaults': 'benchmark',
     'src': sorted(glob.glob('third_party/benchmark/src/*.cc')),
     'headers': sorted(
         glob.glob('third_party/benchmark/src/*.h') +

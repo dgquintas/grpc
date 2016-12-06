@@ -31,7 +31,7 @@
  *
  */
 
-/* This benchmark exists to ensure that the google_benchmark integration is
+/* This benchmark exists to ensure that the benchmark framework integration is
  * working */
 
 #include "third_party/benchmark/include/benchmark/benchmark.h"
