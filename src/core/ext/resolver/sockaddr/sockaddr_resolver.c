@@ -183,7 +183,7 @@ static grpc_resolver *sockaddr_create(grpc_resolver_args *args,
     char *part_str = grpc_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
     if (!parse(&ith_uri, &addresses->addresses[i].address)) {
-      errors_found = true; /* GPR_TRUE */
+      errors_found = true;
     }
     gpr_free(part_str);
     if (errors_found) break;

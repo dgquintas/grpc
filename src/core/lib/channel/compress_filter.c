@@ -32,6 +32,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/compression.h>
@@ -58,7 +59,7 @@ typedef struct call_data {
    * metadata, or by the channel's default compression settings. */
   grpc_compression_algorithm compression_algorithm;
   /** If true, contents of \a compression_algorithm are authoritative */
-  int has_compression_algorithm;
+  bool has_compression_algorithm;
 
   grpc_transport_stream_op *send_op;
   uint32_t send_length;
@@ -104,7 +105,7 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
               md_c_str);
       calld->compression_algorithm = GRPC_COMPRESS_NONE;
     }
-    calld->has_compression_algorithm = 1;
+    calld->has_compression_algorithm = true;
     return NULL;
   }
 
@@ -141,7 +142,7 @@ static void process_send_initial_metadata(
      * exceptionally skipping compression, fall back to the channel
      * default */
     calld->compression_algorithm = channeld->default_compression_algorithm;
-    calld->has_compression_algorithm = 1; /* GPR_TRUE */
+    calld->has_compression_algorithm = true;
   }
   /* hint compression algorithm */
   grpc_metadata_batch_add_tail(
@@ -268,7 +269,7 @@ static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
 
   /* initialize members */
   grpc_slice_buffer_init(&calld->slices);
-  calld->has_compression_algorithm = 0;
+  calld->has_compression_algorithm = false;
   grpc_closure_init(&calld->got_slice, got_slice, elem);
   grpc_closure_init(&calld->send_done, send_done, elem);
 

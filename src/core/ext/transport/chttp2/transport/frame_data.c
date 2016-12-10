@@ -166,10 +166,10 @@ static grpc_error *parse_inner(grpc_exec_ctx *exec_ctx,
       p->frame_type = *cur;
       switch (p->frame_type) {
         case 0:
-          p->is_frame_compressed = 0; /* GPR_FALSE */
+          p->is_frame_compressed = false;
           break;
         case 1:
-          p->is_frame_compressed = 1; /* GPR_TRUE */
+          p->is_frame_compressed = true;
           break;
         default:
           gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);

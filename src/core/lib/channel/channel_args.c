@@ -31,17 +31,18 @@
  *
  */
 
-#include "src/core/lib/channel/channel_args.h"
-#include <grpc/grpc.h>
-#include "src/core/lib/support/string.h"
+#include <stdbool.h>
+#include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include <string.h>
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/support/string.h"
 
 static grpc_arg copy_arg(const grpc_arg *src) {
   grpc_arg dst;
@@ -231,8 +232,8 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
 /** Returns 1 if the argument for compression algorithm's enabled states bitset
  * was found in \a a, returning the arg's value in \a states. Otherwise, returns
  * 0. */
-static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
-                                                    int **states_arg) {
+static bool find_compression_algorithm_states_bitset(const grpc_channel_args *a,
+                                                     int **states_arg) {
   if (a != NULL) {
     size_t i;
     for (i = 0; i < a->num_args; ++i) {
@@ -241,18 +242,18 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
                   a->args[i].key)) {
         *states_arg = &a->args[i].value.integer;
         **states_arg |= 0x1; /* forcefully enable support for no compression */
-        return 1;
+        return true;
       }
     }
   }
-  return 0; /* GPR_FALSE */
+  return false;
 }
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
   int *states_arg = NULL;
   grpc_channel_args *result = *a;
-  const int states_arg_found =
+  const bool states_arg_found =
       find_compression_algorithm_states_bitset(*a, &states_arg);
 
   if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&

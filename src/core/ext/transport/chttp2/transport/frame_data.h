@@ -36,8 +36,11 @@
 
 /* Parser for GRPC streams embedded in DATA frames */
 
+#include <stdbool.h>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -68,7 +71,7 @@ typedef struct {
   uint32_t frame_size;
   grpc_error *error;
 
-  int is_frame_compressed;
+  bool is_frame_compressed;
   grpc_chttp2_incoming_byte_stream *parsing_frame;
 } grpc_chttp2_data_parser;
 

@@ -31,10 +31,11 @@
  *
  */
 
-#include <grpc/byte_buffer_reader.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
@@ -43,15 +44,15 @@
 
 #include "src/core/lib/compression/message_compress.h"
 
-static int is_compressed(grpc_byte_buffer *buffer) {
+static bool is_compressed(grpc_byte_buffer *buffer) {
   switch (buffer->type) {
     case GRPC_BB_RAW:
       if (buffer->data.raw.compression == GRPC_COMPRESS_NONE) {
-        return 0 /* GPR_FALSE */;
+        return false;
       }
       break;
   }
-  return 1 /* GPR_TRUE */;
+  return true;
 }
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
