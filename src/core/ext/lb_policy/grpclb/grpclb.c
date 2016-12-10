@@ -819,10 +819,18 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
    * so that it does not wind up recursively using the grpclb LB policy,
    * as per the special case logic in client_channel.c.
    */
-  static const char *keys_to_remove[] = {GRPC_ARG_LB_POLICY_NAME,
-                                         GRPC_ARG_LB_ADDRESSES};
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_remove(
-      args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove));
+  static const char *keys_to_remove[] = {
+      GRPC_ARG_LB_POLICY_NAME,
+      GRPC_ARG_LB_ADDRESSES /*, GRPC_ARG_SERVER_NAME*/};
+  grpc_arg balancer_name_arg;
+  balancer_name_arg.type = GRPC_ARG_STRING;
+  balancer_name_arg.key = GRPC_ARG_LB_BALANCER_NAME;
+  balancer_name_arg.value.string = addresses->addresses[0].balancer_name;
+  grpc_channel_args *new_args = grpc_channel_args_copy_and_add_and_remove(
+      args->args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
+      &balancer_name_arg, 1);
+
+  /* Create the channel to communicate with the LBs */
   glb_policy->lb_channel = grpc_client_channel_factory_create_channel(
       exec_ctx, glb_policy->cc_factory, target_uri_str,
       GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);

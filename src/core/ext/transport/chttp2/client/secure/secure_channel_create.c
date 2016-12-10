@@ -51,6 +51,10 @@ typedef struct {
   grpc_client_channel_factory base;
   gpr_refcount refs;
   grpc_channel_security_connector *security_connector;
+  // Save a copy of the channel credentials from the application. This may be
+  // needed by side-channels using a target name different from the
+  // application's (eg. gRPCLB connection to the load balancers).
+  grpc_channel_credentials *channel_credentials;
 } client_channel_factory;
 
 static void client_channel_factory_ref(
@@ -65,6 +69,7 @@ static void client_channel_factory_unref(
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "client_channel_factory");
+    grpc_channel_credentials_unref(f->channel_credentials);
     gpr_free(f);
   }
 }
@@ -90,10 +95,41 @@ static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args) {
+  const grpc_channel_args *final_args = args;
   client_channel_factory *f = (client_channel_factory *)cc_factory;
-  grpc_channel *channel =
-      grpc_channel_create(exec_ctx, target, args, GRPC_CLIENT_CHANNEL, NULL);
-  grpc_resolver *resolver = grpc_resolver_create(target, args);
+
+  if (type == GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING) {
+    const grpc_arg *balancer_name_arg =
+        grpc_channel_args_find(args, GRPC_ARG_LB_BALANCER_NAME);
+    GPR_ASSERT(balancer_name_arg != NULL);
+    GPR_ASSERT(balancer_name_arg->type == GRPC_ARG_STRING);
+    const char *balancer_name = balancer_name_arg->value.string;
+
+    // Regenerate connector in order to check against "balancer_name",
+    // which now corresponds to the load balancer name.
+    GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
+                                  "create_channel:lb_connector_switch");
+    grpc_channel_args *new_args_from_connector;
+    if (grpc_channel_credentials_create_security_connector(
+            f->channel_credentials, balancer_name, args, &f->security_connector,
+            &new_args_from_connector) != GRPC_SECURITY_OK) {
+      return grpc_lame_client_channel_create(
+          target, GRPC_STATUS_INTERNAL, "Failed to create security connector.");
+    }
+    grpc_arg connector_arg =
+        grpc_security_connector_to_arg(&f->security_connector->base);
+    static const char *to_remove[] = {GRPC_SECURITY_CONNECTOR_ARG};
+    final_args = grpc_channel_args_copy_and_add_and_remove(
+        new_args_from_connector != NULL ? new_args_from_connector : args,
+        to_remove, 1, &connector_arg, 1);
+    if (new_args_from_connector != NULL) {
+      grpc_channel_args_destroy(new_args_from_connector);
+    }
+  }
+
+  grpc_channel *channel = grpc_channel_create(exec_ctx, target, final_args,
+                                              GRPC_CLIENT_CHANNEL, NULL);
+  grpc_resolver *resolver = grpc_resolver_create(target, final_args);
   if (resolver == NULL) {
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel,
                                 "client_channel_factory_create_channel");
@@ -158,6 +194,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   GRPC_SECURITY_CONNECTOR_REF(&security_connector->base,
                               "grpc_secure_channel_create");
   f->security_connector = security_connector;
+  f->channel_credentials = grpc_channel_credentials_ref(creds);
   // Create channel.
   grpc_channel *channel = client_channel_factory_create_channel(
       &exec_ctx, &f->base, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);

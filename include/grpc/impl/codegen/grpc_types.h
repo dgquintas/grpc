@@ -218,6 +218,8 @@ typedef struct {
 /** Resolved addresses in a form used by the LB policy.
     Not intended for external use. */
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
+/** Name associated with the gRPC LB service. Not intended for external use. */
+#define GRPC_ARG_LB_BALANCER_NAME "grpc.lb_balancer_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** \} */
