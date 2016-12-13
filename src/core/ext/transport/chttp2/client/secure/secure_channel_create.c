@@ -99,19 +99,36 @@ static grpc_channel *client_channel_factory_create_channel(
   client_channel_factory *f = (client_channel_factory *)cc_factory;
 
   if (type == GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING) {
+   // Strip the resolved addresses channel arg because it will be (re)generated
+   // by the name resolver used in the LB channel. Note that the LB channel will
+   // use the sockaddr resolver, so this won't actually generate a query to DNS
+   // (or some other name service). However, the addresses returned by the
+   // sockaddr resolver will have is_balancer=false, whereas our own addresses
+   // have is_balancer=true. We need the LB channel to return addresses with
+   // is_balancer=false so that it does not wind up recursively using the grpclb
+   // LB policy, as per the special case logic in client_channel.c.
+
+
+    // XXX which name to use? the first one? the most common?
+
     const grpc_arg *balancer_name_arg =
         grpc_channel_args_find(args, GRPC_ARG_LB_BALANCER_NAME);
     GPR_ASSERT(balancer_name_arg != NULL);
     GPR_ASSERT(balancer_name_arg->type == GRPC_ARG_STRING);
     const char *balancer_name = balancer_name_arg->value.string;
+    gpr_log(GPR_INFO, "YOOOOO balancer_name = %s", balancer_name);
 
     // Regenerate connector in order to check against "balancer_name",
     // which now corresponds to the load balancer name.
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "create_channel:lb_connector_switch");
     grpc_channel_args *new_args_from_connector;
+    grpc_channel_credentials *creds_sans_call_creds =
+      grpc_channel_credentials_duplicate_without_call_credentials(
+          f->channel_credentials);
+
     if (grpc_channel_credentials_create_security_connector(
-            f->channel_credentials, balancer_name, args, &f->security_connector,
+            creds_sans_call_creds, balancer_name, args, &f->security_connector,
             &new_args_from_connector) != GRPC_SECURITY_OK) {
       return grpc_lame_client_channel_create(
           target, GRPC_STATUS_INTERNAL, "Failed to create security connector.");
