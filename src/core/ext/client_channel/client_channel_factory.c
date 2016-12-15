@@ -31,27 +31,32 @@
  *
  */
 
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/ext/client_channel/client_channel_factory.h"
 
-void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory) {
+void grpc_client_channel_factory_ref(grpc_client_channel_factory *factory) {
   factory->vtable->ref(factory);
 }
 
-void grpc_client_channel_factory_unref(grpc_exec_ctx* exec_ctx,
-                                       grpc_client_channel_factory* factory) {
+void grpc_client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
+                                       grpc_client_channel_factory *factory) {
   factory->vtable->unref(exec_ctx, factory);
 }
 
-grpc_subchannel* grpc_client_channel_factory_create_subchannel(
-    grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
-    const grpc_subchannel_args* args) {
+grpc_subchannel *grpc_client_channel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
+    const grpc_subchannel_args *args) {
   return factory->vtable->create_subchannel(exec_ctx, factory, args);
 }
 
-grpc_channel* grpc_client_channel_factory_create_channel(
-    grpc_exec_ctx* exec_ctx, grpc_client_channel_factory* factory,
-    const char* target, grpc_client_channel_type type,
-    const grpc_channel_args* args) {
+grpc_channel *grpc_client_channel_factory_create_channel(
+    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
+    const char *target, grpc_client_channel_type type,
+    const grpc_channel_args *args) {
   return factory->vtable->create_client_channel(exec_ctx, factory, target, type,
                                                 args);
 }
@@ -86,4 +91,95 @@ grpc_arg grpc_client_channel_factory_create_channel_arg(
   arg.value.pointer.p = factory;
   arg.value.pointer.vtable = &factory_arg_vtable;
   return arg;
+}
+
+struct grpc_channel_credentials_target_info {
+  const char **server_names;
+  const char **canonical_names;
+  size_t capacity;
+  size_t size;
+};
+
+grpc_channel_credentials_target_info *
+grpc_channel_credentials_target_info_create(size_t num_names) {
+  grpc_channel_credentials_target_info *target_info =
+      gpr_malloc(sizeof(*target_info) * num_names);
+  memset(target_info, 0, sizeof(*target_info));
+  return target_info;
+}
+
+grpc_channel_credentials_target_info *
+grpc_channel_credentials_target_info_create_with_default(size_t num_names) {
+  grpc_channel_credentials_target_info *target_info =
+      gpr_malloc(sizeof(*target_info) * num_names);
+  memset(target_info, 0, sizeof(*target_info));
+  return target_info;
+}
+
+bool grpc_channel_credentials_target_info_add_pair(
+    grpc_channel_credentials_target_info *target_info, const char *server_name,
+    const char *canonical_name) {
+  if (target_info->size + 1 > target_info->capacity) {
+    return false;
+  }
+  const size_t i = target_info->size;
+  target_info->server_names[i] = gpr_strdup(server_name);
+  target_info->canonical_names[i] = gpr_strdup(canonical_name);
+  ++target_info->size;
+  return true;
+}
+
+const char *grpc_channel_credentials_target_info_find_canonical_name(
+    grpc_channel_credentials_target_info *target_info,
+    const char *server_name) {
+  for (size_t i = 0; i < target_info->size; ++i) {
+    if (strcmp(server_name, target_info->server_names[i]) == 0) {
+      return target_info->canonical_names[i];
+    }
+  }
+  return NULL;
+}
+
+grpc_channel_credentials_target_info *grpc_channel_credentials_target_info_copy(
+    grpc_channel_credentials_target_info *src) {
+  grpc_channel_credentials_target_info *copy =
+      grpc_channel_credentials_target_info_create(src->capacity);
+  copy->capacity = src->capacity;
+  copy->size = src->size;
+  for (size_t i = 0; i < src->size; ++i) {
+    copy->server_names[i] = gpr_strdup(src->server_names[i]);
+    copy->canonical_names[i] = gpr_strdup(src->canonical_names[i]);
+  }
+  return copy;
+}
+
+int grpc_channel_credentials_target_info_cmp(
+    const grpc_channel_credentials_target_info *a,
+    const grpc_channel_credentials_target_info *b) {
+  if (a->capacity > b->capacity)
+    return 1;
+  else if (a->capacity < b->capacity)
+    return -1;
+  if (a->size > b->capacity)
+    return 1;
+  else if (a->size < b->capacity)
+    return -1;
+
+  for (size_t i = 0; i < a->size; ++i) {
+    const int server_name_cmp = strcmp(a->server_names[i], b->server_names[i]);
+    if (server_name_cmp != 0) return server_name_cmp;
+    const int canonical_name_cmp =
+        strcmp(a->canonical_names[i], b->canonical_names[i]);
+    if (canonical_name_cmp != 0) return canonical_name_cmp;
+  }
+  return 0;
+}
+
+void grpc_channel_credentials_target_info_destroy(
+    grpc_channel_credentials_target_info *target_info) {
+  for (size_t i = 0; i < target_info->size; ++i) {
+    gpr_free((char *)(target_info->server_names[i]));
+    gpr_free((char *)(target_info->canonical_names[i]));
+  }
+  target_info->capacity = target_info->size = 0;
 }

@@ -50,6 +50,10 @@ typedef struct {
   grpc_client_channel_factory base;
   gpr_refcount refs;
   grpc_channel_security_connector *security_connector;
+  // Save a copy of the channel credentials from the application. This may be
+  // needed by side-channels using a target name different from the
+  // application's (eg. gRPCLB connection to the load balancers).
+  grpc_channel_credentials *channel_credentials;
 } client_channel_factory;
 
 static void client_channel_factory_ref(
@@ -64,6 +68,7 @@ static void client_channel_factory_unref(
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "client_channel_factory");
+    grpc_channel_credentials_unref(f->channel_credentials);
     gpr_free(f);
   }
 }
@@ -89,12 +94,49 @@ static grpc_channel *client_channel_factory_create_channel(
     grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
     const char *target, grpc_client_channel_type type,
     const grpc_channel_args *args) {
+  client_channel_factory *f = (client_channel_factory *)cc_factory;
+  grpc_channel_args *new_args = NULL;
+  if (type == GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING) {
+    /* For LB channels, regenerate the security connector. The credentials used
+     * for the new security connection are stripped of call credentials and has
+     * knowledge about the canonical names of the LB server targets to be used
+     * for secure naming */
+
+    // Remove the call credentials from the parent channel's credentials.
+    grpc_channel_credentials *creds_sans_call_creds =
+        grpc_channel_credentials_duplicate_without_call_credentials(
+            f->channel_credentials);
+
+    // Create a new security connector using the stripped credentials and the
+    // server-to-balancer names map; and switch over to the new security
+    // connector.
+    GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
+                                  "lb_security_connector");
+    grpc_channel_args *new_args_from_connector;
+    if (grpc_channel_credentials_create_security_connector(
+            creds_sans_call_creds, target, args, &f->security_connector,
+            &new_args_from_connector) != GRPC_SECURITY_OK) {
+      return grpc_lame_client_channel_create(
+          target, GRPC_STATUS_INTERNAL, "Failed to create security connector.");
+    }
+
+    grpc_arg connector_arg =
+        grpc_security_connector_to_arg(&f->security_connector->base);
+    static const char *to_remove[] = {GRPC_SECURITY_CONNECTOR_ARG};
+    new_args = grpc_channel_args_copy_and_add_and_remove(
+        new_args_from_connector != NULL ? new_args_from_connector : args,
+        to_remove, 1, &connector_arg, 1);
+    if (new_args_from_connector != NULL) {
+      grpc_channel_args_destroy(new_args_from_connector);
+    }
+  }
   // Add channel arg containing the server URI.
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   arg.key = GRPC_ARG_SERVER_URI;
   arg.value.string = (char *)target;
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  new_args = grpc_channel_args_copy_and_add(new_args != NULL ? new_args : args,
+                                            &arg, 1);
   grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
                                               GRPC_CLIENT_CHANNEL, NULL);
   grpc_channel_args_destroy(new_args);
@@ -128,9 +170,11 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
         target, GRPC_STATUS_INTERNAL,
         "Security connector exists in channel args.");
   }
+
   // Create security connector and construct new channel args.
   grpc_channel_security_connector *security_connector;
   grpc_channel_args *new_args_from_connector;
+
   if (grpc_channel_credentials_create_security_connector(
           creds, target, args, &security_connector, &new_args_from_connector) !=
       GRPC_SECURITY_OK) {
@@ -146,6 +190,7 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   GRPC_SECURITY_CONNECTOR_REF(&security_connector->base,
                               "grpc_secure_channel_create");
   f->security_connector = security_connector;
+  f->channel_credentials = grpc_channel_credentials_ref(creds);
   // Add channel args containing the client channel factory and security
   // connector.
   grpc_arg new_args[2];

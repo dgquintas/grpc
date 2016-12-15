@@ -42,6 +42,10 @@
 // Channel arg key for client channel factory.
 #define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
 
+// Channel arg key for mapping of server names to balancer names for secure
+// naming.
+#define GRPC_ARG_GRPCLB_BALANCER_NAMES "grpc.grpclb_server_to_balancer_names"
+
 typedef struct grpc_client_channel_factory grpc_client_channel_factory;
 typedef struct grpc_client_channel_factory_vtable
     grpc_client_channel_factory_vtable;
@@ -70,6 +74,29 @@ struct grpc_client_channel_factory_vtable {
                                          grpc_client_channel_type type,
                                          const grpc_channel_args *args);
 };
+
+typedef struct grpc_channel_credentials_target_info
+    grpc_channel_credentials_target_info;
+
+grpc_channel_credentials_target_info *
+grpc_channel_credentials_target_info_create(size_t num_names);
+
+bool grpc_channel_credentials_target_info_add_pair(
+    grpc_channel_credentials_target_info *target_info, const char *server_name,
+    const char *canonical_name);
+
+const char *grpc_channel_credentials_target_info_find_canonical_name(
+    grpc_channel_credentials_target_info *target_info, const char *server_name);
+
+grpc_channel_credentials_target_info *grpc_channel_credentials_target_info_copy(
+    grpc_channel_credentials_target_info *target_info);
+
+int grpc_channel_credentials_target_info_cmp(
+    const grpc_channel_credentials_target_info *a,
+    const grpc_channel_credentials_target_info *b);
+
+void grpc_channel_credentials_target_info_destroy(
+    grpc_channel_credentials_target_info *target_info);
 
 void grpc_client_channel_factory_ref(grpc_client_channel_factory *factory);
 void grpc_client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
