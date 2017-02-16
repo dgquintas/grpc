@@ -110,6 +110,14 @@ def _generate_jobs(languages, configs, platforms,
 
 def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs = []
+
+  test_jobs += _generate_jobs(languages=['sanity'],
+                             configs=['opt'],
+                             platforms=['linux'],
+                             labels=['sanity_only'],
+                             extra_args=extra_args,
+                             inner_jobs=inner_jobs)
+
   # supported on linux only
   test_jobs += _generate_jobs(languages=['sanity', 'php7'],
                              configs=['dbg', 'opt'],
