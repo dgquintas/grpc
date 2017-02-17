@@ -122,7 +122,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              configs=['asan'],
                              platforms=['linux'],
                              labels=['stage_two'],
-                             extra_args=extra_args + ['--sample_percent', '10'],
+                             extra_args=extra_args,
                              inner_jobs=inner_jobs)
 
   # supported on linux only
@@ -290,6 +290,19 @@ def _runs_per_test_type(arg_str):
     raise argparse.ArgumentTypeError(msg)
 
 
+def percent_type(arg_str):
+  pct = float(arg_str)
+  if pct > 100 or pct < 0:
+    raise argparse.ArgumentTypeError(
+        "'%f' is not a valid percentage in the [0, 100] range" % pct)
+  return pct
+
+
+# This is math.isclose in python >= 3.5
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+      return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 if __name__ == "__main__":
   argp = argparse.ArgumentParser(description='Run a matrix of run_tests.py tests.')
   argp.add_argument('-j', '--jobs',
@@ -334,6 +347,8 @@ if __name__ == "__main__":
   argp.add_argument('-n', '--runs_per_test', default=1, type=_runs_per_test_type,
                     help='How many times to run each tests. >1 runs implies ' +
                     'omitting passing test from the output & reports.')
+  argp.add_argument('-p', '--sample_percent', default=100.0, type=percent_type,
+                    help='Run a random sample with that percentage of tests')
   args = argp.parse_args()
 
   extra_args = []
@@ -342,9 +357,9 @@ if __name__ == "__main__":
   if args.force_default_poller:
     extra_args.append('--force_default_poller')
   if args.runs_per_test > 1:
-    extra_args.append('-n')
-    extra_args.append('%s' % args.runs_per_test)
-    extra_args.append('--quiet_success')
+    extra_args.extend(['-n', str(args.runs_per_test), '--quiet_success'])
+  if not isclose(args.sample_percent, 100):
+    extra_args.extend(['-p', str(args.sample_percent)])
 
   all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
              _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)
