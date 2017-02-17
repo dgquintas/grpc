@@ -122,7 +122,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              configs=['asan'],
                              platforms=['linux'],
                              labels=['stage_two'],
-                             extra_args=extra_args,  # XXX anyadir aqui el -p
+                             extra_args=extra_args,  # XXX 
                              inner_jobs=inner_jobs)
 
   # supported on linux only
