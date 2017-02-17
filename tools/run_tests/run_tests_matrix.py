@@ -114,8 +114,15 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs += _generate_jobs(languages=['sanity'],
                              configs=['opt'],
                              platforms=['linux'],
-                             labels=['sanity_only'],
+                             labels=['stage_one'],
                              extra_args=extra_args,
+                             inner_jobs=inner_jobs)
+
+  test_jobs += _generate_jobs(languages=['c'],
+                             configs=['asan'],
+                             platforms=['linux'],
+                             labels=['stage_two'],
+                             extra_args=extra_args,  # XXX anyadir aqui el -p
                              inner_jobs=inner_jobs)
 
   # supported on linux only
@@ -130,7 +137,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
   test_jobs += _generate_jobs(languages=['c', 'csharp', 'node', 'python'],
                              configs=['dbg', 'opt'],
                              platforms=['linux', 'macos', 'windows'],
-                             labels=['basictests'],
+                             labels=['basictests', 'stage_three'],
                              extra_args=extra_args,
                              inner_jobs=inner_jobs)
 
