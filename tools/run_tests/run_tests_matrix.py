@@ -61,6 +61,7 @@ def _docker_jobspec(name, runtests_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                    '--report_suite_name', '%s' % name] + runtests_args,
           shortname='run_tests_%s' % name,
           timeout_seconds=_RUNTESTS_TIMEOUT)
+  print(test_job)
   return test_job
 
 
