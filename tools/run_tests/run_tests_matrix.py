@@ -122,7 +122,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                              configs=['asan'],
                              platforms=['linux'],
                              labels=['stage_two'],
-                             extra_args=extra_args + ['--sample_percent', 10],
+                             extra_args=extra_args + ['--sample_percent', '10'],
                              inner_jobs=inner_jobs)
 
   # supported on linux only
