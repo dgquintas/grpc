@@ -1383,6 +1383,12 @@ static void lb_on_server_status_received_locked(grpc_exec_ctx *exec_ctx,
                             "lb_on_server_status_received");
 }
 
+static bool glb_update(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                                const grpc_lb_policy_args *args) {
+  // XXX
+  return true;
+}
+
 /* Code wiring the policy with the rest of the core */
 static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_destroy,
@@ -1393,7 +1399,8 @@ static const grpc_lb_policy_vtable glb_lb_policy_vtable = {
     glb_ping_one_locked,
     glb_exit_idle_locked,
     glb_check_connectivity_locked,
-    glb_notify_on_state_change_locked};
+    glb_notify_on_state_change_locked,
+    glb_update};
 
 static void glb_factory_ref(grpc_lb_policy_factory *factory) {}
 

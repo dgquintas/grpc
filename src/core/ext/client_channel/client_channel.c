@@ -351,7 +351,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
   channel_data *chand = arg;
   char *lb_policy_name = NULL;
   grpc_lb_policy *lb_policy = NULL;
-  grpc_lb_policy *old_lb_policy;
+  grpc_lb_policy *old_lb_policy = NULL;
   grpc_slice_hash_table *method_params_table = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   bool exit_idle = false;
@@ -403,13 +403,24 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     lb_policy_args.args = chand->resolver_result;
     lb_policy_args.client_channel_factory = chand->client_channel_factory;
     lb_policy_args.combiner = chand->combiner;
-    lb_policy =
-        grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
-    if (lb_policy != NULL) {
-      GRPC_LB_POLICY_REF(lb_policy, "config_change");
-      GRPC_ERROR_UNREF(state_error);
-      state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
-                                                       &state_error);
+    const bool lb_policy_type_changed =
+        (chand->info_lb_policy_name == NULL) ||
+        (strcmp(chand->info_lb_policy_name, lb_policy_name) != 0);
+    if (chand->lb_policy != NULL && !lb_policy_type_changed) {
+      // update
+      grpc_lb_policy_update(exec_ctx, chand->lb_policy, &lb_policy_args);
+    } else {
+      // XXX
+      lb_policy =
+          grpc_lb_policy_create(exec_ctx, lb_policy_name, &lb_policy_args);
+      if (lb_policy != NULL) {
+        GRPC_LB_POLICY_REF(lb_policy, "config_change");
+        GRPC_ERROR_UNREF(state_error);
+        state = grpc_lb_policy_check_connectivity_locked(exec_ctx, lb_policy,
+                                                         &state_error);
+        old_lb_policy = chand->lb_policy;
+        chand->lb_policy = lb_policy;
+      }
     }
     // Find service config.
     channel_arg =
@@ -441,7 +452,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     }
     // Before we clean up, save a copy of lb_policy_name, since it might
     // be pointing to data inside chand->resolver_result.
-    // The copy will be saved in chand->lb_policy_name below.
+    // The copy will be saved in chand->info_lb_policy_name below.
     lb_policy_name = gpr_strdup(lb_policy_name);
     grpc_channel_args_destroy(exec_ctx, chand->resolver_result);
     chand->resolver_result = NULL;
@@ -457,8 +468,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
     gpr_free(chand->info_lb_policy_name);
     chand->info_lb_policy_name = lb_policy_name;
   }
-  old_lb_policy = chand->lb_policy;
-  chand->lb_policy = lb_policy;
+
   if (service_config_json != NULL) {
     gpr_free(chand->info_service_config_json);
     chand->info_service_config_json = service_config_json;
@@ -511,7 +521,7 @@ static void on_resolver_result_changed_locked(grpc_exec_ctx *exec_ctx,
         "resolver_gone");
   }
 
-  if (exit_idle) {
+  if (lb_policy != NULL && exit_idle) {
     grpc_lb_policy_exit_idle_locked(exec_ctx, lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "exit_idle");
   }
@@ -598,9 +608,10 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   op->transport_private.args[0] = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "start_transport_op");
   grpc_closure_sched(
-      exec_ctx, grpc_closure_init(
-                    &op->transport_private.closure, start_transport_op_locked,
-                    op, grpc_combiner_scheduler(chand->combiner, false)),
+      exec_ctx,
+      grpc_closure_init(&op->transport_private.closure,
+                        start_transport_op_locked, op,
+                        grpc_combiner_scheduler(chand->combiner, false)),
       GRPC_ERROR_NONE);
 }
 

@@ -662,9 +662,16 @@ static void rr_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     grpc_connected_subchannel_ping(exec_ctx, target, closure);
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, target, "rr_picked");
   } else {
-    grpc_closure_sched(exec_ctx, closure, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "Round Robin not connected"));
+    grpc_closure_sched(
+        exec_ctx, closure,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Round Robin not connected"));
   }
+}
+
+static bool rr_update(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                                const grpc_lb_policy_args *args) {
+  // XXX
+  return true;
 }
 
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
@@ -676,7 +683,8 @@ static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_ping_one_locked,
     rr_exit_idle_locked,
     rr_check_connectivity_locked,
-    rr_notify_on_state_change_locked};
+    rr_notify_on_state_change_locked,
+    rr_update};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 

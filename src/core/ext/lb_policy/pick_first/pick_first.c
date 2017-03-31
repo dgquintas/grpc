@@ -56,6 +56,9 @@ typedef struct {
   grpc_subchannel **subchannels;
   size_t num_subchannels;
 
+  grpc_subchannel **staged_subchannels;
+  size_t num_staged_subchannels;
+
   grpc_closure connectivity_changed;
 
   /** remaining members are protected by the combiner */
@@ -93,7 +96,7 @@ static void pf_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_free(p);
 }
 
-static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
+static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
   p->shutdown = 1;
@@ -120,7 +123,7 @@ static void pf_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
-static void pf_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                   grpc_connected_subchannel **target,
                                   grpc_error *error) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
@@ -144,7 +147,7 @@ static void pf_cancel_pick_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   GRPC_ERROR_UNREF(error);
 }
 
-static void pf_cancel_picks_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                                    uint32_t initial_metadata_flags_mask,
                                    uint32_t initial_metadata_flags_eq,
                                    grpc_error *error) {
@@ -217,18 +220,26 @@ static void destroy_subchannels_locked(grpc_exec_ctx *exec_ctx,
                                        pick_first_lb_policy *p) {
   size_t i;
   size_t num_subchannels = p->num_subchannels;
+  size_t num_staged_subchannels = p->num_staged_subchannels;
   grpc_subchannel **subchannels;
+  grpc_subchannel **staged_subchannels;
 
   subchannels = p->subchannels;
+  staged_subchannels = p->staged_subchannels;
   p->num_subchannels = 0;
+  p->num_staged_subchannels = 0;
   p->subchannels = NULL;
+  p->staged_subchannels = NULL;
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "destroy_subchannels");
 
   for (i = 0; i < num_subchannels; i++) {
     GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannels[i], "pick_first");
   }
-
+  for (i = 0; i < num_staged_subchannels; i++) {
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, staged_subchannels[i], "pick_first");
+  }
   gpr_free(subchannels);
+  gpr_free(staged_subchannels);
 }
 
 static void pf_connectivity_changed_locked(grpc_exec_ctx *exec_ctx, void *arg,
@@ -378,41 +389,19 @@ static void pf_ping_one_locked(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
 }
 
-static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
-    pf_destroy,
-    pf_shutdown_locked,
-    pf_pick_locked,
-    pf_cancel_pick_locked,
-    pf_cancel_picks_locked,
-    pf_ping_one_locked,
-    pf_exit_idle_locked,
-    pf_check_connectivity_locked,
-    pf_notify_on_state_change_locked};
-
-static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
-
-static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
-
-static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
-                                         grpc_lb_policy_factory *factory,
-                                         grpc_lb_policy_args *args) {
-  GPR_ASSERT(args->client_channel_factory != NULL);
-
-  /* Find the number of backend addresses. We ignore balancer
-   * addresses, since we don't know how to handle them. */
-  const grpc_arg *arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(arg != NULL && arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses *addresses = arg->value.pointer.p;
+/* Create subchannels from \a addresses, returning the number of subchannels
+ * created in \a subchannels, which the caller is responsible for freeing. */
+static size_t create_subchannels(grpc_exec_ctx *exec_ctx,
+                                 const grpc_lb_addresses *addresses,
+                                 const grpc_lb_policy_args *args,
+                                 grpc_subchannel ***subchannels) {
   size_t num_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     if (!addresses->addresses[i].is_balancer) ++num_addrs;
   }
-  if (num_addrs == 0) return NULL;
+  if (num_addrs == 0) return 0;
 
-  pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
-
-  p->subchannels = gpr_zalloc(sizeof(grpc_subchannel *) * num_addrs);
+  *subchannels = gpr_zalloc(sizeof(grpc_subchannel *) * num_addrs);
   grpc_subchannel_args sc_args;
   size_t subchannel_idx = 0;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
@@ -438,16 +427,60 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
     grpc_channel_args_destroy(exec_ctx, new_args);
 
     if (subchannel != NULL) {
-      p->subchannels[subchannel_idx++] = subchannel;
+      (*subchannels)[subchannel_idx++] = subchannel;
     }
   }
-  if (subchannel_idx == 0) {
+  return subchannel_idx;
+}
+
+static bool pf_update(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                                const grpc_lb_policy_args *args) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)policy;
+  /* Find the number of backend addresses. We ignore balancer
+   * addresses, since we don't know how to handle them. */
+  const grpc_arg *arg =
+      grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
+  if (arg == NULL || arg->type != GRPC_ARG_POINTER) false;
+  const grpc_lb_addresses *addresses = arg->value.pointer.p;
+  grpc_subchannel **new_subchannels = NULL;
+  const size_t num_new_subchannels =
+      create_subchannels(exec_ctx, addresses, args, &new_subchannels);
+  if (num_new_subchannels > 0) {
+    GPR_ASSERT(new_subchannels != NULL);
+    p->subchannels = new_subchannels;
+    p->num_subchannels = num_new_subchannels;
+  } else {
+    gpr_free(new_subchannels);
+  }
+  return true;
+}
+
+static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
+    pf_destroy,
+    pf_shutdown,
+    pf_pick_locked,
+    pf_cancel_pick,
+    pf_cancel_picks,
+    pf_ping_one_locked,
+    pf_exit_idle_locked,
+    pf_check_connectivity_locked,
+    pf_notify_on_state_change_locked,
+    pf_update};
+
+static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
+
+static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
+
+static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
+                                         grpc_lb_policy_factory *factory,
+                                         grpc_lb_policy_args *args) {
+  GPR_ASSERT(args->client_channel_factory != NULL);
+  pick_first_lb_policy *p = gpr_zalloc(sizeof(*p));
+  if (!pf_update(exec_ctx, &p->base, args) || p->num_subchannels == 0) {
     gpr_free(p->subchannels);
     gpr_free(p);
     return NULL;
   }
-  p->num_subchannels = subchannel_idx;
-
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable, args->combiner);
   grpc_closure_init(&p->connectivity_changed, pf_connectivity_changed_locked, p,
                     grpc_combiner_scheduler(args->combiner, false));
