@@ -41,23 +41,6 @@ import pipes
 import os
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
 import comment_on_pr
-import jobset
-import itertools
-import speedup
-import random
-import shutil
-import errno
-
-_INTERESTING = (
-  'cpu_time',
-  'real_time',
-  'locks_per_iteration',
-  'allocs_per_iteration',
-  'writes_per_iteration',
-  'atm_cas_per_iteration',
-  'atm_add_per_iteration',
-  'nows_per_iteration',
-)
 
 def changed_ratio(n, o):
   if float(o) <= .0001: o = 0
@@ -77,6 +60,26 @@ def median(ary):
 def min_change(pct):
   return lambda n, o: abs(changed_ratio(n,o)) > pct/100.0
 
+nanos = {
+  'abs_diff': 5,
+  'pct_diff': 10,
+}
+counter = {
+  'abs_diff': 0.5,
+  'pct_diff': 10,
+}
+
+_INTERESTING = {
+  'cpu_time': nanos,
+  'real_time': nanos,
+  'locks_per_iteration': counter,
+  'allocs_per_iteration': counter,
+  'writes_per_iteration': counter,
+  'atm_cas_per_iteration': counter,
+  'atm_add_per_iteration': counter,
+}
+
+
 _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
                               'bm_fullstack_streaming_ping_pong',
                               'bm_fullstack_streaming_pump',
@@ -92,15 +95,14 @@ _AVAILABLE_BENCHMARK_TESTS = ['bm_fullstack_unary_ping_pong',
 
 argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
 argp.add_argument('-t', '--track',
-                  choices=sorted(_INTERESTING),
+                  choices=sorted(_INTERESTING.keys()),
                   nargs='+',
-                  default=sorted(_INTERESTING),
+                  default=sorted(_INTERESTING.keys()),
                   help='Which metrics to track')
 argp.add_argument('-b', '--benchmarks', nargs='+', choices=_AVAILABLE_BENCHMARK_TESTS, default=['bm_cq'])
 argp.add_argument('-d', '--diff_base', type=str)
-argp.add_argument('-r', '--repetitions', type=int, default=1)
-argp.add_argument('-l', '--loops', type=int, default=20)
-argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
+argp.add_argument('-r', '--repetitions', type=int, default=4)
+argp.add_argument('-p', '--p_threshold', type=float, default=0.01)
 args = argp.parse_args()
 
 assert args.diff_base
@@ -115,10 +117,9 @@ def avg(lst):
 
 def make_cmd(cfg):
   return ['make'] + args.benchmarks + [
-      'CONFIG=%s' % cfg, '-j', '%d' % args.jobs]
+      'CONFIG=%s' % cfg, '-j', '%d' % multiprocessing.cpu_count()]
 
-def build(dest):
-  shutil.rmtree('bm_diff_%s' % dest, ignore_errors=True)
+def build():
   subprocess.check_call(['git', 'submodule', 'update'])
   try:
     subprocess.check_call(make_cmd('opt'))
@@ -127,38 +128,38 @@ def build(dest):
     subprocess.check_call(['make', 'clean'])
     subprocess.check_call(make_cmd('opt'))
     subprocess.check_call(make_cmd('counters'))
-  os.rename('bins', 'bm_diff_%s' % dest)
 
-def collect1(bm, cfg, ver, idx):
-  cmd = ['bm_diff_%s/%s/%s' % (ver, cfg, bm),
-         '--benchmark_out=%s.%s.%s.%d.json' % (bm, cfg, ver, idx),
+def collect1(bm, cfg, ver):
+  cmd = ['bins/%s/%s' % (cfg, bm),
+         '--benchmark_out=%s.%s.%s.json' % (bm, cfg, ver),
          '--benchmark_out_format=json',
          '--benchmark_repetitions=%d' % (args.repetitions)
          ]
-  return jobset.JobSpec(cmd, shortname='%s %s %s %d/%d' % (bm, cfg, ver, idx+1, args.loops),
-                             verbose_success=True, timeout_seconds=None)
+  print cmd
+  subprocess.check_call(cmd)
 
-build('new')
+build()
+for bm in args.benchmarks:
+  collect1(bm, 'opt', 'new')
+  collect1(bm, 'counters', 'new')
 
 where_am_i = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
 subprocess.check_call(['git', 'checkout', args.diff_base])
+
 try:
-  build('old')
+  build()
+  comparables = []
+  for bm in args.benchmarks:
+    try:
+      collect1(bm, 'opt', 'old')
+      collect1(bm, 'counters', 'old')
+      comparables.append(bm)
+    except subprocess.CalledProcessError, e:
+      pass
 finally:
   subprocess.check_call(['git', 'checkout', where_am_i])
   subprocess.check_call(['git', 'submodule', 'update'])
 
-jobs = []
-for loop in range(0, args.loops):
-  jobs.extend(x for x in itertools.chain(
-    (collect1(bm, 'opt', 'new', loop) for bm in args.benchmarks),
-    (collect1(bm, 'counters', 'new', loop) for bm in args.benchmarks),
-    (collect1(bm, 'opt', 'old', loop) for bm in args.benchmarks),
-    (collect1(bm, 'counters', 'old', loop) for bm in args.benchmarks),
-  ))
-random.shuffle(jobs, random.SystemRandom().random)
-
-jobset.run(jobs, maxjobs=args.jobs)
 
 class Benchmark:
 
@@ -179,11 +180,16 @@ class Benchmark:
       new = self.samples[True][f]
       old = self.samples[False][f]
       if not new or not old: continue
-      mdn_diff = abs(median(new) - median(old))
-      print '%s: new=%r old=%r mdn_diff=%r' % (f, new, old, mdn_diff)
-      s = speedup.speedup(new, old)
-      if abs(s) > 3 and mdn_diff > 0.5:
-        self.final[f] = '%+d%%' % s
+      p = stats.ttest_ind(new, old)[1]
+      new_mdn = median(new)
+      old_mdn = median(old)
+      delta = new_mdn - old_mdn
+      ratio = changed_ratio(new_mdn, old_mdn)
+      print '%s: new=%r old=%r new_mdn=%f old_mdn=%f delta=%f(%f:%f) ratio=%f(%f:%f) p=%f' % (
+      f, new, old, new_mdn, old_mdn, delta, abs(delta), _INTERESTING[f]['abs_diff'], ratio, abs(ratio), _INTERESTING[f]['pct_diff']/100.0, p
+      )
+      if p < args.p_threshold and abs(delta) > _INTERESTING[f]['abs_diff'] and abs(ratio) > _INTERESTING[f]['pct_diff']/100.0:
+        self.final[f] = delta
     return self.final.keys()
 
   def skip(self):

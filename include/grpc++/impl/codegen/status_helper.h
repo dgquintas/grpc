@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,38 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H
+#ifndef GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
+#define GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
 
-#include <grpc/impl/codegen/compression_types.h>
+#include <grpc++/impl/codegen/status.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+namespace grpc {
 
-extern int grpc_compression_trace;
+inline StatusCode GetCanonicalCode(const Status& status) {
+  return status.error_code();
+}
 
-/** Compression filter for outgoing data.
- *
- * See <grpc/compression.h> for the available compression settings.
- *
- * Compression settings may come from:
- *  - Channel configuration, as established at channel creation time.
- *  - The metadata accompanying the outgoing data to be compressed. This is
- *    taken as a request only. We may choose not to honor it. The metadata key
- *    is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
- *
- * Compression can be disabled for concrete messages (for instance in order to
- * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
- * the BEGIN_MESSAGE flags.
- *
- * The attempted compression mechanism is added to the resulting initial
- * metadata under the'grpc-encoding' key.
- *
- * If compression is actually performed, BEGIN_MESSAGE's flag is modified to
- * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
- * aforementioned 'grpc-encoding' metadata value, data will pass through
- * uncompressed. */
+}  // namespace grpc
 
-extern const grpc_channel_filter grpc_message_compress_filter;
-
-#endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H \
-          */
+#endif  // GRPCXX_IMPL_CODEGEN_STATUS_HELPER_H
