@@ -124,6 +124,24 @@ bool grpc_channel_stack_builder_move_prev(
   return true;
 }
 
+grpc_channel_stack_builder_iterator *grpc_channel_stack_builder_iterator_find(
+    grpc_channel_stack_builder *builder, const char *filter_name) {
+  GPR_ASSERT(filter_name != NULL);
+  grpc_channel_stack_builder_iterator *it =
+      grpc_channel_stack_builder_create_iterator_at_first(builder);
+  if (grpc_channel_stack_builder_iterator_is_end(it)) return it;
+  do {
+    const char *filter_name_at_it =
+        grpc_channel_stack_builder_iterator_filter_name(it);
+    if (filter_name_at_it != NULL &&
+        strcmp(filter_name, filter_name_at_it) == 0) {
+      return it;
+    }
+  } while (grpc_channel_stack_builder_move_next(it));
+  GPR_ASSERT(grpc_channel_stack_builder_iterator_is_end(it));
+  return it;
+}
+
 bool grpc_channel_stack_builder_move_prev(
     grpc_channel_stack_builder_iterator *iterator);
 
@@ -167,6 +185,21 @@ bool grpc_channel_stack_builder_append_filter(
       it, filter, post_init_func, user_data);
   grpc_channel_stack_builder_iterator_destroy(it);
   return ok;
+}
+
+bool grpc_channel_stack_builder_remove_filter(
+    grpc_channel_stack_builder *builder, const char *filter_name) {
+  grpc_channel_stack_builder_iterator *it =
+      grpc_channel_stack_builder_iterator_find(builder, filter_name);
+  if (grpc_channel_stack_builder_iterator_is_end(it)) {
+    grpc_channel_stack_builder_iterator_destroy(it);
+    return false;
+  }
+  it->node->prev->next = it->node->next;
+  it->node->next->prev = it->node->prev;
+  gpr_free(it->node);
+  grpc_channel_stack_builder_iterator_destroy(it);
+  return true;
 }
 
 bool grpc_channel_stack_builder_prepend_filter(
