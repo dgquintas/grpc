@@ -180,7 +180,6 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   grpc_handshake_manager_pending_list_add(&state->pending_handshake_mgrs,
                                           handshake_mgr);
   gpr_mu_unlock(&state->mu);
-  grpc_tcp_server_ref(state->tcp_server);
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(
           gpr_zalloc(sizeof(*connection_state)));
@@ -211,6 +210,7 @@ static void server_start_listener(grpc_server* server, void* arg,
   gpr_mu_lock(&state->mu);
   state->shutdown = false;
   gpr_mu_unlock(&state->mu);
+  grpc_tcp_server_ref(state->tcp_server);
   grpc_tcp_server_start(state->tcp_server, pollsets, pollset_count, on_accept,
                         state);
 }
